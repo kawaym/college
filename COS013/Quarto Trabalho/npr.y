@@ -160,6 +160,7 @@ CMD : CMD_LET DELIMITER { $$.c = $$.c; }
     | Expr DELIMITER  { $$.c = $1.c + "^"; }
     | CMD_FUNC DELIMITER
     | CMD_FUNC
+    | CMD_FOR DELIMITER
     | Expr ASM DELIMITER {$$.c = $1.c + $2.c + "^"; }
     | RETURN Expr DELIMITER {$$.c = $2.c + "'&retorno'" + "@" + "~"; } 
     ;
@@ -223,6 +224,23 @@ CMD_IF  : IF '(' Expr ')' CMD ELSE CMD
           $$.c = $3.c + lbl_true + "?" + lbl_fim_if + "#" + definicao_lbl_true + $5.c + definicao_lbl_fim_if;
           //  $$.c = $3.c + lbl_true + "?" + $5.c + definicao_lbl_true ;
         }
+        ;
+
+CMD_FOR : FOR '(' PRIM_E DELIMITER Expr DELIMITER Expr ')' CMD
+        {
+          string lbl_fim_for = gera_label("fim_for");
+          string lbl_condicao_for = gera_label("condicao_for");
+          string lbl_comando_for = gera_label("comando_for");
+          string def_fim_for = ":" + lbl_fim_for;
+          string def_condicao_for = ":" + lbl_condicao_for;
+          string def_comando_for = ":" + lbl_comando_for;
+
+          $$.c = $3.c + def_condicao_for + $5.c + lbl_comando_for + "?" + lbl_fim_for + "#"
+          + def_comando_for + $9.c + $7.c + "^" + lbl_condicao_for + "#" + def_fim_for;
+        }
+
+PRIM_E  : CMD_LET
+        | Expr { $$.c = $1.c + "^"; }
         ;
 
 EMPILHA_TABLE : { table.push_back( map<string, symbol>{}); }
