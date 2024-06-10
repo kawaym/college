@@ -1,0 +1,1 @@
+`Hora atual: ${$agora + dsakjdaskj} horas n'agua!`
