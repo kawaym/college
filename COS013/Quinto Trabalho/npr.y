@@ -171,13 +171,58 @@ CMDs: CMDs CMD  { $$.c = $1.c + $2.c; }
     ;
 
 CMD : CMD_VAR_DECLARATION DELIMITER
+    | CMD_FUNC
     | CMD_FOR
     | CMD_WHILE
     | CMD_IF
-    | '{' CMDs '}' { $$.c = $2.c; }
-    | '{' CMDs '}' DELIMITER { $$.c = $2.c; }
+    | '{' STACK CMDs UNSTACK '}' { $$.c = "<{" + $3.c + "}>"; }
+    | '{' STACK CMDs UNSTACK '}' DELIMITER { $$.c = "<{" + $3.c + "}>"; }
+    | Expr ASM DELIMITER {$$.c = $1.c + $2.c + "^"; }
     | Expr DELIMITER { $$.c = $$.c + "^"; } 
+    | RETURN Expr DELIMITER { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
     ;
+CMD_FUNC  : FUNCTION ID { declare_var(Var, $2.c[0], $2.row, $2.col); }
+            '(' STACK PARAMETERS ')' '{' CMDs '}'
+            {
+              string lbl_function = gera_label("func_" + $2.c[0]);
+              string def_function = ":" + lbl_function;
+
+              $$.c = $2.c + "&" + $2.c + "{}" + "=" + "'&funcao'" + lbl_function
+              + "[=]" + "^";
+              functions = functions + def_function + $6.c + $9.c + "undefined"
+              + "@" + "'&retorno'" + "@" + "~";
+              table.pop_back();
+            }
+          ;
+
+PARAMETERS  : PARAMs 
+            | { $$.c.clear(); }
+            ;
+
+PARAMs    : PARAMs ',' PARAM
+            { $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string($1.counter) +"[@]" + "=" + "^" ;
+              $$.counter = $$.counter + $1.counter + $3.counter;      
+            }
+          | PARAM { $$.c = $1.c + "&" + $1.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "=" + "^"; $$.counter = $1.counter + 1;}
+          ;  
+
+PARAM :   ID  {$$.c = $1.c; $$.counter = 0; $$.default_value.clear(); declare_var(Let, $1.c[0], $1.row, $1.col); }
+      |   ID '=' Expr { $$.c = $1.c; $$.counter = 0; 
+                        $$.default_value = $3.c; 
+                        declare_var(Let, $1.c[0],  $1.row, $1.col); } 
+      ;
+
+ARGUMENTS : ARGs
+          | {$$.c.clear();}
+          ;
+
+ARGs : ARGs ',' ARG {$$.c = $1.c + $3.c; $$.counter = $1.counter + $3.counter; }
+     | ARG {$$.c = $1.c; $$.counter = $1.counter; }
+     ;
+
+ARG : Expr {$$.c = $1.c; $$.counter = 1; }
+    ;
+
 CMD_FOR : FOR '(' PRIM_E DELIMITER Expr DELIMITER Expr ')' CMD
         {
           string lbl_fim_for = gera_label("fim_for");
@@ -265,6 +310,12 @@ VAR_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_va
         | ID {$$.c = declare_var(Var, $1.c[0], $1.row, $1.col); }
         ;
 
+STACK : { table.push_back( map<string, symbol>{}); }
+      ;
+
+UNSTACK : { table.pop_back(); }
+        ;
+
 PRIM_E: CMD_LET
         | Attr { $$.c = $1.c + "^"; }
         ;
@@ -282,6 +333,9 @@ Expr  : Expr ST Expr { $$.increment_value = $1.increment_value + $3.increment_va
       | LVALUE { $$.c = get_var($1.c[0], false) + "@"; }
       | LVALUE INCREMENT { $$.insert_increment_value($1.c[0]); $$.c = get_var($1.c[0], true) + "@"; }
       | LVALUEPROP { $$.c = $1.c + "[@]"; }
+      | Expr '(' ARGUMENTS ')' {$$.c = $3.c + to_string($3.counter) + $1.c + "$"; }
+      | '{' '}' {$$.c = vector<string>{"{}"}; }
+      | '[' ']' {$$.c = vector<string>{"[]"}; }
       | Number
       | STRING
       | V_TRUE 
@@ -290,23 +344,21 @@ Expr  : Expr ST Expr { $$.increment_value = $1.increment_value + $3.increment_va
 
 Attr  : LVALUE '=' Expr {$$.increment_value = $3.increment_value; 
                         $$.c = get_var($1.c[0], true)  + $3.c + "=" + $$.consume_increment(); }
-      | LVALUE '=' '{' '}' { $$.c = get_var($1.c[0], true) + "{}" + "="; }
-      | LVALUE '=' '[' ']' { $$.c = get_var($1.c[0], true) + "[]" + "="; }
       | LVALUEPROP '=' Expr {$$.increment_value = $3.increment_value;
                             $$.c = $1.c + $3.c + "[=]" + $$.consume_increment(); }
-      | LVALUEPROP '=' '{' '}' { $$.c = $1.c + "{}" + "[=]"; }
-      | LVALUEPROP '=' '[' ']' { $$.c = $1.c + "[]" + "[=]"; }
       | LVALUE PLUS_EQUAL Expr { $$.c = $1.c + get_var($1.c[0], true) + "@" + $3.c + "+" + "="; }
       | LVALUEPROP PLUS_EQUAL Expr { $$.c = $1.c + $1.c + "[@]" + $3.c + "+" + "[=]"; }
       ;
 
 LVALUE: ID
+      | '(' LVALUE ')' { $$.c = $2.c; }
       ;
 
 LVALUEPROP  : LVALUEPROP PROPS {$$.c = $1.c + "[@]" + $2.c; }
             | LVALUE PROPS { $$.c = get_var($1.c[0], false) + "@" + $2.c; }
             | LVALUEPROP '.' LVALUE { $$.c = $1.c + "[@]" + $3.c; }
             | LVALUE '.' LVALUE { $$.c = get_var($1.c[0], false) + "@" + $3.c; }
+            | '(' LVALUEPROP ')' { $$.c = $2.c; }
             ;             
 
 PROPS : PROPS PROP {$$.c = $1.c + "[@]" + $2.c; }
