@@ -15,6 +15,7 @@ struct Atributes {
   int counter = 0;
   vector<string> increment_value;
   vector<string> default_value;
+  int array_field_counter = 0;
 
   void clear() {
     default_value.clear();
@@ -146,6 +147,22 @@ void print( vector<string> codigo ) {
   cout << endl;  
 }
 
+
+void printTable() {
+    // Verifica se o vetor não está vazio
+    if (!table.empty()) {
+        // Obtem o primeiro item do vetor
+        std::map<std::string, symbol>& first_map = table[0];
+
+        // Itera sobre o mapa e imprime as chaves e valores
+        for (const auto& pair : first_map) {
+            std::cout << "Key: " << pair.first;
+        }
+    } else {
+        std::cout << "The vector is empty." << std::endl;
+    }
+}
+
 %}
 
 %token	 ID IF ELSE LET CONST VAR FOR FUNCTION ASM RETURN WHILE
@@ -161,7 +178,7 @@ void print( vector<string> codigo ) {
 
 %%
 
-FIM : S {$$.c = solve_address($1.c + "." + functions); print($$.c);}
+FIM : S { $$.c = solve_address($1.c + "." + functions); print($$.c); }
 
 S   : CMDs
     ;
@@ -180,7 +197,9 @@ CMD : CMD_VAR_DECLARATION DELIMITER
     | Expr ASM DELIMITER {$$.c = $1.c + $2.c + "^"; }
     | Expr DELIMITER { $$.c = $$.c + "^"; } 
     | RETURN Expr DELIMITER { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
+    | EMPTY_BLOCK { $$.clear(); }
     ;
+
 CMD_FUNC  : FUNCTION ID { declare_var(Var, $2.c[0], $2.row, $2.col); }
             '(' STACK PARAMETERS ')' '{' CMDs '}'
             {
@@ -225,6 +244,7 @@ ARG : Expr {$$.c = $1.c; $$.counter = 1; }
 
 CMD_FOR : FOR '(' PRIM_E DELIMITER Expr DELIMITER Expr ')' CMD
         {
+          $$.increment_value = $7.increment_value;
           string lbl_fim_for = gera_label("fim_for");
           string lbl_condicao_for = gera_label("condicao_for");
           string lbl_comando_for = gera_label("comando_for");
@@ -233,8 +253,10 @@ CMD_FOR : FOR '(' PRIM_E DELIMITER Expr DELIMITER Expr ')' CMD
           string def_comando_for = ":" + lbl_comando_for;
 
           $$.c = $3.c + def_condicao_for + $5.c + lbl_comando_for + "?" + lbl_fim_for + "#"
-          + def_comando_for + $9.c + $7.c + "^" + lbl_condicao_for + "#" + def_fim_for;
+          + def_comando_for + $9.c + $7.c + $$.consume_increment() + "^" + lbl_condicao_for + "#" + def_fim_for;
         }
+        ;
+
 CMD_WHILE : WHILE '(' Expr ')' CMD {
               $$.increment_value = $3.increment_value;
               string lbl_comeco_while = gera_label( "lbl_comeco_while" );
@@ -279,6 +301,8 @@ LET_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_va
                         $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + $3.c + "=" + "^" + $$.consume_increment(); }
         | ID '=' '[' ']' { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "[]" + "=" + "^"; }
         | ID '=' '{' '}' { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + "^"; }
+        | ID '=' OBJ_LITERAL { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + $3.c +"^"; }
+        | ID '=' ARRAY_LITERAL { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "[]" + "=" + $3.c +"^"; }
         | ID {$$.c = declare_var(Let, $1.c[0], $1.row, $1.col); }
         ;
 
@@ -293,6 +317,7 @@ CONST_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_
                         $$.c = declare_var(Const, $1.c[0], $1.row, $1.col) + $1.c + $3.c + "=" + "^" + $$.consume_increment(); }
         | ID '=' '[' ']' { $$.c = declare_var(Const, $1.c[0], $1.row, $1.col) + $1.c + "[]" + "=" + "^"; }
         | ID '=' '{' '}' { $$.c = declare_var(Const, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + "^"; }
+        | ID '=' OBJ_LITERAL { $$.c = declare_var(Const, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + $3.c +"^"; }
         | ID {$$.c = declare_var(Const, $1.c[0], $1.row, $1.col); }
         ;
 
@@ -307,6 +332,7 @@ VAR_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_va
                         $$.c = declare_var(Var, $1.c[0], $1.row, $1.col) + $1.c + $3.c + "=" + "^" + $$.consume_increment(); }
         | ID '=' '[' ']' { $$.c = declare_var(Var, $1.c[0], $1.row, $1.col) + $1.c + "[]" + "=" + "^"; }
         | ID '=' '{' '}' { $$.c = declare_var(Var, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + "^"; }
+        | ID '=' OBJ_LITERAL { $$.c = declare_var(Var, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + $3.c +"^"; }
         | ID {$$.c = declare_var(Var, $1.c[0], $1.row, $1.col); }
         ;
 
@@ -333,7 +359,7 @@ Expr  : Expr ST Expr { $$.increment_value = $1.increment_value + $3.increment_va
       | LVALUE { $$.c = get_var($1.c[0], false) + "@"; }
       | LVALUE INCREMENT { $$.insert_increment_value($1.c[0]); $$.c = get_var($1.c[0], true) + "@"; }
       | LVALUEPROP { $$.c = $1.c + "[@]"; }
-      | Expr '(' ARGUMENTS ')' {$$.c = $3.c + to_string($3.counter) + $1.c + "$"; }
+      | Expr '(' ARGUMENTS ')' { $$.c = $3.c + to_string($3.counter) + $1.c + "$"; }
       | '{' '}' {$$.c = vector<string>{"{}"}; }
       | '[' ']' {$$.c = vector<string>{"[]"}; }
       | Number
@@ -350,6 +376,30 @@ Attr  : LVALUE '=' Expr {$$.increment_value = $3.increment_value;
       | LVALUEPROP PLUS_EQUAL Expr { $$.c = $1.c + $1.c + "[@]" + $3.c + "+" + "[=]"; }
       ;
 
+OBJ_LITERAL : '{' FIELD_LIST '}' { $$.c = $2.c; }
+            ;
+
+FIELD_LIST : FIELDS
+           ;
+
+FIELDS : FIELD ',' FIELDS { $$.c = $1.c + $3.c; }
+       | FIELD
+       ;
+
+FIELD : ID ':' Expr { $$.c = $1.c + $3.c + "[<=]"; }
+      | ID ':' OBJ_LITERAL { $$.c = $1.c + "{}" + $3.c + "[<=]"; }
+      | ID ':' ARRAY_LITERAL { $$.c = $1.c + "[]" + $3.c + "[<=]"; }
+      ;
+
+ARRAY_LITERAL : '[' EXPR_ARRAY ']' { $$.c = $2.c; }
+              ;
+
+EXPR_ARRAY : EXPR_ARRAY ',' Expr { $$.array_field_counter = $1.array_field_counter + $3.array_field_counter + 1; 
+                                   $$.c = to_string($1.array_field_counter) + $3.c + "[<=]" + $1.c; }
+           | Expr { $$.c = to_string($$.array_field_counter) + $1.c + "[<=]"; $$.array_field_counter = 1; }
+           ;
+
+
 LVALUE: ID
       | '(' LVALUE ')' { $$.c = $2.c; }
       ;
@@ -358,7 +408,7 @@ LVALUEPROP  : LVALUEPROP PROPS {$$.c = $1.c + "[@]" + $2.c; }
             | LVALUE PROPS { $$.c = get_var($1.c[0], false) + "@" + $2.c; }
             | LVALUEPROP '.' LVALUE { $$.c = $1.c + "[@]" + $3.c; }
             | LVALUE '.' LVALUE { $$.c = get_var($1.c[0], false) + "@" + $3.c; }
-            | '(' LVALUEPROP ')' { $$.c = $2.c; }
+            | '(' LVALUEPROP ')' { $$.c = $2.c; } 
             ;             
 
 PROPS : PROPS PROP {$$.c = $1.c + "[@]" + $2.c; }
@@ -372,13 +422,14 @@ Number  : NUM
         | '-' NUM {$$.c = "0" + $2.c + "-"; }
         ;
 
+EMPTY_BLOCK : '{' '}'{}
+
 %%
 
 #include "lex.yy.c"
 
 vector<string> declare_var( var_types type, string name, int row, int col) {
     /* cerr << "insert_symbol( " << type << ", " << name << ", " << row << ", " << col << ")" << endl; */
-
     auto& topo = table.back();
 
     if (topo.count(name) == 0) {
