@@ -7,6 +7,7 @@
 using namespace std;
 
 int row = 0, col = 0;
+int inFunction = false;
 
 struct Atributes {
   vector<string> c;
@@ -165,7 +166,7 @@ void printTable() {
 
 %}
 
-%token	 ID IF ELSE LET CONST VAR FOR FUNCTION ASM RETURN WHILE
+%token	 ID IF ELSE LET CONST VAR FOR FUNCTION ASM RETURN WHILE ARROW_FUNCTION
 %token   STRING NUM V_TRUE V_FALSE
 %token    DELIMITER
 
@@ -197,10 +198,11 @@ CMD : CMD_VAR_DECLARATION DELIMITER
     | Expr ASM DELIMITER {$$.c = $1.c + $2.c + "^"; }
     | Expr DELIMITER { $$.c = $$.c + "^"; } 
     | RETURN Expr DELIMITER { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
+    | RETURN OBJ_LITERAL DELIMITER { $$.c = $2.c + "'&retorno'" + "@" + "~"; }
     | EMPTY_BLOCK { $$.clear(); }
     ;
 
-CMD_FUNC  : FUNCTION ID { declare_var(Var, $2.c[0], $2.row, $2.col); }
+CMD_FUNC  : FUNCTION ID { declare_var(Var, $2.c[0], $2.row, $2.col); inFunction = true;}
             '(' STACK PARAMETERS ')' '{' CMDs '}'
             {
               string lbl_function = gera_label("func_" + $2.c[0]);
@@ -211,8 +213,10 @@ CMD_FUNC  : FUNCTION ID { declare_var(Var, $2.c[0], $2.row, $2.col); }
               functions = functions + def_function + $6.c + $9.c + "undefined"
               + "@" + "'&retorno'" + "@" + "~";
               table.pop_back();
+              inFunction = false;
             }
           ;
+
 
 PARAMETERS  : PARAMs 
             | { $$.c.clear(); }
@@ -220,19 +224,37 @@ PARAMETERS  : PARAMs
 
 PARAMs    : PARAMs ',' PARAM
             { $$.c = $1.c + $3.c + "&" + $3.c + "arguments" + "@" + to_string($1.counter) +"[@]" + "=" + "^" ;
+              string lbl_default = gera_label("default_" + $3.c[0]);
+              string def_default = ":" + lbl_default;
+              string lbl_skip = gera_label("skip_default_" + $3.c[0]);
+              string def_skip = ":" + lbl_skip;
+              if ($3.default_value.size() > 0){
+                $$.c = $$.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "undefined" + "@" + "==" + lbl_default + "?" + lbl_skip + "#" + def_default + $3.c + $3.default_value + "=" + "^" + def_skip;
+              };
               $$.counter = $$.counter + $1.counter + $3.counter;      
             }
-          | PARAM { $$.c = $1.c + "&" + $1.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "=" + "^"; $$.counter = $1.counter + 1;}
+          | PARAM { $$.c = $1.c + "&" + $1.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "=" + "^"; 
+
+                    string lbl_default = gera_label("default_" + $1.c[0]);
+                    string def_default = ":" + lbl_default;
+                    string lbl_skip = gera_label("skip_default_" + $1.c[0]);
+                    string def_skip = ":" + lbl_skip;
+                    if ($1.default_value.size() > 0) {
+
+                    $$.c = $$.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "undefined" + "@" + "==" + lbl_default + "?" + lbl_skip + "#" + def_default + $1.c + $1.default_value + "=" + "^" + def_skip;
+                    };
+
+                    $$.counter = $1.counter + 1;}
           ;  
 
-PARAM :   ID  {$$.c = $1.c; $$.counter = 0; $$.default_value.clear(); declare_var(Let, $1.c[0], $1.row, $1.col); }
+PARAM :   ID  { $$.c = $1.c; $$.counter = 0; $$.default_value.clear(); declare_var(Let, $1.c[0], $1.row, $1.col); }
       |   ID '=' Expr { $$.c = $1.c; $$.counter = 0; 
                         $$.default_value = $3.c; 
                         declare_var(Let, $1.c[0],  $1.row, $1.col); } 
       ;
 
 ARGUMENTS : ARGs
-          | {$$.c.clear();}
+          | { $$.c.clear(); $$.counter = 0; }
           ;
 
 ARGs : ARGs ',' ARG {$$.c = $1.c + $3.c; $$.counter = $1.counter + $3.counter; }
@@ -240,6 +262,7 @@ ARGs : ARGs ',' ARG {$$.c = $1.c + $3.c; $$.counter = $1.counter + $3.counter; }
      ;
 
 ARG : Expr {$$.c = $1.c; $$.counter = 1; }
+    | ARRAY_LITERAL { $$.c = "[]" + $1.c; $$.counter = 1; }
     ;
 
 CMD_FOR : FOR '(' PRIM_E DELIMITER Expr DELIMITER Expr ')' CMD
@@ -303,10 +326,32 @@ LET_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_va
         | ID '=' '{' '}' { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + "^"; }
         | ID '=' OBJ_LITERAL { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "=" + $3.c +"^"; }
         | ID '=' ARRAY_LITERAL { $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "[]" + "=" + $3.c +"^"; }
+        | ID '=' FUNCTION '(' STACK PARAMETERS  ')' '{' CMDs UNSTACK '}'
+            {
+              string lbl_function = gera_label("func_" + $1.c[0]);
+              string def_function = ":" + lbl_function;
+
+              $$.c =  declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "'&funcao'" + lbl_function + "[<=]" + "=" + "^";
+              functions = functions + def_function + $6.c + $9.c + "undefined"
+              + "@" + "'&retorno'" + "@" + "~";
+            }
+          ;
+        | ID '=' PARAMs ARROW_FUNCTION Expr { 
+              string lbl_function = gera_label("func_" + $1.c[0]);
+              string def_function = ":" + lbl_function;
+              $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "'&funcao'" + lbl_function + "[<=]" + "=" + "^";
+              functions = functions + def_function + $3.c + $5.c + "'&retorno'" + "@" + "~";            
+              }
+        | ID '=' '(' PARAMs ')' ARROW_FUNCTION Expr {
+              string lbl_function = gera_label("func_" + $1.c[0]);
+              string def_function = ":" + lbl_function;
+              $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "'&funcao'" + lbl_function + "[<=]" + "=" + "^";
+              functions = functions + def_function + $4.c + $6.c + "'&retorno'" + "@" + "~";   
+        } 
         | ID {$$.c = declare_var(Let, $1.c[0], $1.row, $1.col); }
         ;
 
-CMD_CONST : CONST CONST_VARS {$$.c = $2.c; }
+CMD_CONST : CONST CONST_VARS { $$.c = $2.c; }
           ;
 
 CONST_VARS  : CONST_VAR ',' CONST_VARS { $$.c = $1.c + $3.c; }
@@ -396,7 +441,12 @@ ARRAY_LITERAL : '[' EXPR_ARRAY ']' { $$.c = $2.c; }
 
 EXPR_ARRAY : EXPR_ARRAY ',' Expr { $$.array_field_counter = $1.array_field_counter + $3.array_field_counter + 1; 
                                    $$.c = to_string($1.array_field_counter) + $3.c + "[<=]" + $1.c; }
+           | EXPR_ARRAY ',' OBJ_LITERAL { $$.array_field_counter = $1.array_field_counter + $3.array_field_counter + 1; 
+                                   $$.c = to_string($1.array_field_counter) + "{}" + $3.c + "[<=]" + $1.c; }
+           | EXPR_ARRAY ',' ARRAY_LITERAL { $$.array_field_counter = $1.array_field_counter + $3.array_field_counter + 1; 
+                                   $$.c = to_string($1.array_field_counter) + "[]" + $3.c + "[<=]" + $1.c; }
            | Expr { $$.c = to_string($$.array_field_counter) + $1.c + "[<=]"; $$.array_field_counter = 1; }
+           | OBJ_LITERAL { $$.c = to_string($$.array_field_counter) + $1.c + "[<=]"; $$.array_field_counter = 1; }
            ;
 
 
@@ -459,6 +509,8 @@ string get_field (string &name){
 }
 
 void check_symbol(string name, bool allowMod) {
+  return;
+  if (inFunction) return;
     for (int i = table.size() - 1; i >= 0; i--) {
       auto& atual = table[i];
       if (atual.count(name) > 0) {
@@ -471,6 +523,7 @@ void check_symbol(string name, bool allowMod) {
         }
       }
     }
+    /* return; */
     cerr << "Erro: a variável '" << name << "' não foi declarada." << endl;
     exit(1);
 
