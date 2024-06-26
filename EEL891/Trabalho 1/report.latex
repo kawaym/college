@@ -1,0 +1,101 @@
+\documentclass[a4paper]{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{listings}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{wrapfig}
+\usepackage{minted}
+\usepackage{makeidx}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\usepackage{subfig}
+\usepackage{float}
+
+\pagenumbering{gobble}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{}
+\lhead{\textbf{Introdução a Aprendizado de Máquina}}
+\cfoot{\thepage}
+
+\begin{document}
+\begin{titlepage}
+   \begin{center}
+        \vspace{1cm}
+        \LARGE{EEL891 - Introdução a Aprendizado de Máquina \\ 2024/1}
+
+        \vspace{1.5cm}
+        \huge{Competição 1}\\
+        \vspace{1cm}
+
+        \begin{center}
+           \includegraphics[width=0.7\textwidth]{Images/minerva.png}
+        \end{center}
+
+        \vspace{1.5cm}
+        %\vspace{2cm}
+
+        \large{
+        \item Kaway Henrique da Rocha Marinho - DRE 119056239
+        \begin{itemize}
+        \item \texttt{kawayrmarinho@poli.ufrj.br}
+        \end{itemize}
+        }
+
+        \vspace{0.5cm}
+        \vfill
+
+        \vspace{2.3cm}
+        Rio de Janeiro - RJ\\
+        20 de Julho de 2024 (2024.1)
+
+
+   \end{center}
+\end{titlepage}
+
+\newpage
+
+
+
+
+\section{Introdução}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse feugiat feugiat elit eu tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec turpis risus, posuere vel porta sit amet, ultricies et risus. Fusce nisl lacus, feugiat sit amet nibh vel, egestas dignissim tortor. Vivamus at felis faucibus nisi dignissim aliquam eu in purus. Sed sed mi placerat, vestibulum arcu accumsan, cursus purus. Curabitur sit amet nibh iaculis justo finibus dignissim. Aliquam vel posuere velit. Proin fringilla bibendum nibh, vel vulputate metus.
+
+\section{Preparação dos dados}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse feugiat feugiat elit eu tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec turpis risus, posuere vel porta sit amet, ultricies et risus. Fusce nisl lacus, feugiat sit amet nibh vel, egestas dignissim tortor. Vivamus at felis faucibus nisi dignissim aliquam eu in purus. Sed sed mi placerat, vestibulum arcu accumsan, cursus purus. Curabitur sit amet nibh iaculis justo finibus dignissim. Aliquam vel posuere velit. Proin fringilla bibendum nibh, vel vulputate metus.
+
+\section{Seleção de Atributos}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse feugiat feugiat elit eu tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec turpis risus, posuere vel porta sit amet, ultricies et risus. Fusce nisl lacus, feugiat sit amet nibh vel, egestas dignissim tortor. Vivamus at felis faucibus nisi dignissim aliquam eu in purus. Sed sed mi placerat, vestibulum arcu accumsan, cursus purus. Curabitur sit amet nibh iaculis justo finibus dignissim. Aliquam vel posuere velit. Proin fringilla bibendum nibh, vel vulputate metus.
+
+\newpage
+\section{Modelos utilizados}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse feugiat feugiat elit eu tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec turpis risus, posuere vel porta sit amet, ultricies et risus. Fusce nisl lacus, feugiat sit amet nibh vel, egestas dignissim tortor. Vivamus at felis faucibus nisi dignissim aliquam eu in purus. Sed sed mi placerat, vestibulum arcu accumsan, cursus purus. Curabitur sit amet nibh iaculis justo finibus dignissim. Aliquam vel posuere velit. Proin fringilla bibendum nibh, vel vulputate metus.
+
+\subsection{Modelo 1}
+\subsection{Modelo 2}
+
+\newpage
+\section{Validação}
+
+\section{Resultados}
+
+\subsection{Modelo 1}
+\subsection{Modelo Final}
+
+\section{Conclusõe}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse feugiat feugiat elit eu tincidunt. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec turpis risus, posuere vel porta sit amet, ultricies et risus. Fusce nisl lacus, feugiat sit amet nibh vel, egestas dignissim tortor. Vivamus at felis faucibus nisi dignissim aliquam eu in purus. Sed sed mi placerat, vestibulum arcu accumsan, cursus purus. Curabitur sit amet nibh iaculis justo finibus dignissim. Aliquam vel posuere velit. Proin fringilla bibendum nibh, vel vulputate metus.
+
+\end{document}
+
