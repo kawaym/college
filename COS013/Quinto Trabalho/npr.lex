@@ -64,7 +64,8 @@ if        { return token(IF); }
 else      { return token(ELSE); }
 for       { return token(FOR); }
 while     { return token(WHILE); }
-function  { return token(FUNCTION);}
+function  { return token(FUNCTION); }
+"=>"      { return token(ARROW_FUNCTION); }
 return    { return token(RETURN); }
 "asm{".*"}" { lexema = trim(yytext + 3, "{}");
               yylval.c = tokeniza(lexema);

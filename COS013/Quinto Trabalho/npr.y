@@ -166,7 +166,7 @@ void printTable() {
 
 %}
 
-%token	 ID IF ELSE LET CONST VAR FOR FUNCTION ASM RETURN WHILE
+%token	 ID IF ELSE LET CONST VAR FOR FUNCTION ASM RETURN WHILE ARROW_FUNCTION
 %token   STRING NUM V_TRUE V_FALSE
 %token    DELIMITER
 
@@ -228,7 +228,9 @@ PARAMs    : PARAMs ',' PARAM
               string def_default = ":" + lbl_default;
               string lbl_skip = gera_label("skip_default_" + $3.c[0]);
               string def_skip = ":" + lbl_skip;
-              $$.c = $$.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "undefined" + "@" + "==" + lbl_default + "?" + lbl_skip + "#" + def_default + $3.c + $3.default_value + "=" + "^" + def_skip;
+              if ($3.default_value.size() > 0){
+                $$.c = $$.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "undefined" + "@" + "==" + lbl_default + "?" + lbl_skip + "#" + def_default + $3.c + $3.default_value + "=" + "^" + def_skip;
+              };
               $$.counter = $$.counter + $1.counter + $3.counter;      
             }
           | PARAM { $$.c = $1.c + "&" + $1.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "=" + "^"; 
@@ -237,12 +239,15 @@ PARAMs    : PARAMs ',' PARAM
                     string def_default = ":" + lbl_default;
                     string lbl_skip = gera_label("skip_default_" + $1.c[0]);
                     string def_skip = ":" + lbl_skip;
+                    if ($1.default_value.size() > 0) {
+
                     $$.c = $$.c + "arguments" + "@" + to_string($1.counter) + "[@]" + "undefined" + "@" + "==" + lbl_default + "?" + lbl_skip + "#" + def_default + $1.c + $1.default_value + "=" + "^" + def_skip;
+                    };
 
                     $$.counter = $1.counter + 1;}
           ;  
 
-PARAM :   ID  {$$.c = $1.c; $$.counter = 0; $$.default_value.clear(); declare_var(Let, $1.c[0], $1.row, $1.col); }
+PARAM :   ID  { $$.c = $1.c; $$.counter = 0; $$.default_value.clear(); declare_var(Let, $1.c[0], $1.row, $1.col); }
       |   ID '=' Expr { $$.c = $1.c; $$.counter = 0; 
                         $$.default_value = $3.c; 
                         declare_var(Let, $1.c[0],  $1.row, $1.col); } 
@@ -331,10 +336,22 @@ LET_VAR : ID '=' Expr {$$.increment_value = $$.increment_value + $3.increment_va
               + "@" + "'&retorno'" + "@" + "~";
             }
           ;
+        | ID '=' PARAMs ARROW_FUNCTION Expr { 
+              string lbl_function = gera_label("func_" + $1.c[0]);
+              string def_function = ":" + lbl_function;
+              $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "'&funcao'" + lbl_function + "[<=]" + "=" + "^";
+              functions = functions + def_function + $3.c + $5.c + "'&retorno'" + "@" + "~";            
+              }
+        | ID '=' '(' PARAMs ')' ARROW_FUNCTION Expr {
+              string lbl_function = gera_label("func_" + $1.c[0]);
+              string def_function = ":" + lbl_function;
+              $$.c = declare_var(Let, $1.c[0], $1.row, $1.col) + $1.c + "{}" + "'&funcao'" + lbl_function + "[<=]" + "=" + "^";
+              functions = functions + def_function + $4.c + $6.c + "'&retorno'" + "@" + "~";   
+        } 
         | ID {$$.c = declare_var(Let, $1.c[0], $1.row, $1.col); }
         ;
 
-CMD_CONST : CONST CONST_VARS {$$.c = $2.c; }
+CMD_CONST : CONST CONST_VARS { $$.c = $2.c; }
           ;
 
 CONST_VARS  : CONST_VAR ',' CONST_VARS { $$.c = $1.c + $3.c; }
@@ -492,6 +509,7 @@ string get_field (string &name){
 }
 
 void check_symbol(string name, bool allowMod) {
+  return;
   if (inFunction) return;
     for (int i = table.size() - 1; i >= 0; i--) {
       auto& atual = table[i];
