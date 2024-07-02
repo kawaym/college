@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+import seaborn as sns
 from enum import Enum
 
 if sys.platform.startswith('win32'):
@@ -39,10 +40,11 @@ for column in data:
     else:
         variableTypeDictionary[column] = 'continuous'
 
+
 # Gera gráficos de cada coluna para visualização
 
-for column in data:
-    data.plot.bar(x='inadimplente', y=column)
+sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
+plt.show()
 
 # Calcula os indíces de correlação com a coluna-alvo, retorna as cinco maiores correlações
 
@@ -51,10 +53,10 @@ corrcoefs = []
 for column in data:
     if (column == 'inadimplente'): break
     if (column == 'id_solicitante'): continue
-    if (variableTypeDictionary[column] == 'categorical'):
-        corr = data[column].corr(data['inadimplente'], method='spearman')
-    else:
-        corr = stats.pointbiserialr(data[column], data['inadimplente'])
+#    if (variableTypeDictionary[column] == 'categorical'):
+    corr = data[column].corr(data['inadimplente'], method='spearman')
+#    else:
+#        corr = stats.pointbiserialr(data[column], data['inadimplente'])
     corrcoefs.append([column, corr])
 
 
