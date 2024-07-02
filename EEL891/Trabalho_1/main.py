@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import sys
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 from enum import Enum
 
 if sys.platform.startswith('win32'):
@@ -17,6 +18,7 @@ stateDictionary = {'RJ': 1, 'RS': 2, 'BA': 3, 'CE': 4, 'PE': 5, 'PR': 6, 'PB': 7
 sexDictionary = {'N': 0, 'M': 1, 'F': 2}
 booleanDictionary = {'N': 0, 'Y': 1}
 methodDictionary = {'presencial': 0, 'internet': 1, 'correio': 2}
+variableTypeDictionary = {}
 
 data = pd.read_csv(path + trainingFile)
 data = data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
@@ -33,12 +35,14 @@ for column in data:
         data[column] = data[column].apply(lambda x: booleanDictionary[x] if x in booleanDictionary else x)
         data[column] = data[column].apply(lambda x: methodDictionary[x] if x in methodDictionary else x)
         data[column] = data[column].apply(lambda x: int(x))
+        variableTypeDictionary[column] = 'categorical'
+    else:
+        variableTypeDictionary[column] = 'continuous'
 
 # Gera gráficos de cada coluna para visualização
 
-fig, ax = plt.subplots()
-ax.plot(data['dia_vencimento'], data['inadimplente'], linewidth=0, marker='s', label='Data points')
-plt.show()
+for column in data:
+    data.plot.bar(x='inadimplente', y=column)
 
 # Calcula os indíces de correlação com a coluna-alvo, retorna as cinco maiores correlações
 
@@ -47,14 +51,17 @@ corrcoefs = []
 for column in data:
     if (column == 'inadimplente'): break
     if (column == 'id_solicitante'): continue
-    corr = data[column].corr(data['inadimplente'], method='spearman')
+    if (variableTypeDictionary[column] == 'categorical'):
+        corr = data[column].corr(data['inadimplente'], method='spearman')
+    else:
+        corr = stats.pointbiserialr(data[column], data['inadimplente'])
     corrcoefs.append([column, corr])
 
 
-corrcoefs.sort(reverse=True, key = (lambda x: x[1]))
+corrcoefs.sort(reverse=True, key = (lambda x: abs(x[1])))
 
 selectedCoefs = [corrcoefs[i] for i in range(0,7)]
 
-# Gera gráficos das sete maiores colunas com suas respectivas correlações, ajuda na visualização
+print(selectedCoefs)
 
-plt.style.use('ggplot')
+# Gera gráficos das sete maiores colunas com suas respectivas correlações, ajuda na visualização
