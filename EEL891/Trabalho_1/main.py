@@ -46,7 +46,12 @@ print(data.head())
 
 #sns.scatterplot(x=data['renda_mensal_regular'], y=data['valor_patrimonio_pessoal'], hue=data['inadimplente'])
 
-sns.barplot(x=data['inadimplente'], y=data['valor_patrimonio_pessoal'], hue=data['sexo'])
+#sns.scatterplot(x=data['valor_patrimonio_pessoal'], y=data['renda_mensal_regular'], hue=data['inadimplente'])
+sns.lmplot(data=data, x='valor_patrimonio_pessoal', y='renda_mensal_regular', hue='inadimplente')
+plt.yscale('log')
+plt.xscale('log')
+
+#sns.barplot(x=data['inadimplente'], y=data['valor_patrimonio_pessoal'], hue=data['sexo'])
 
 #sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
 #plt.show()
