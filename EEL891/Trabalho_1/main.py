@@ -21,7 +21,7 @@ booleanDictionary = {'N': 0, 'Y': 1}
 methodDictionary = {'presencial': 0, 'internet': 1, 'correio': 2}
 variableTypeDictionary = {}
 
-data = pd.read_csv(path + trainingFile)
+data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
 data = data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
 
 print('Dados estatísticos do conjunto de dados')
@@ -40,30 +40,35 @@ for column in data:
     else:
         variableTypeDictionary[column] = 'continuous'
 
+print(data.head())
 
 # Gera gráficos de cada coluna para visualização
 
-sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
-plt.show()
+#sns.scatterplot(x=data['renda_mensal_regular'], y=data['valor_patrimonio_pessoal'], hue=data['inadimplente'])
+
+sns.barplot(x=data['inadimplente'], y=data['valor_patrimonio_pessoal'], hue=data['sexo'])
+
+#sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
+#plt.show()
 
 # Calcula os indíces de correlação com a coluna-alvo, retorna as cinco maiores correlações
 
-corrcoefs = []
+#corrcoefs = []
 
-for column in data:
-    if (column == 'inadimplente'): break
-    if (column == 'id_solicitante'): continue
+#for column in data:
+#    if (column == 'inadimplente'): break
+#    if (column == 'id_solicitante'): continue
 #    if (variableTypeDictionary[column] == 'categorical'):
-    corr = data[column].corr(data['inadimplente'], method='spearman')
+#    corr = data[column].corr(data['inadimplente'], method='spearman')
 #    else:
 #        corr = stats.pointbiserialr(data[column], data['inadimplente'])
-    corrcoefs.append([column, corr])
+#    corrcoefs.append([column, corr])
 
 
-corrcoefs.sort(reverse=True, key = (lambda x: abs(x[1])))
+#corrcoefs.sort(reverse=True, key = (lambda x: abs(x[1])))
 
-selectedCoefs = [corrcoefs[i] for i in range(0,7)]
+#selectedCoefs = [corrcoefs[i] for i in range(0,7)]
 
-print(selectedCoefs)
+#print(selectedCoefs)
 
 # Gera gráficos das sete maiores colunas com suas respectivas correlações, ajuda na visualização
