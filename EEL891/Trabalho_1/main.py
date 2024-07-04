@@ -5,75 +5,64 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 from enum import Enum
+from sklearn import preprocessing
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
 
 trainingFile = "/data/conjunto_de_treinamento.csv"
 
-#  ========== CRIA DATAFRAME PRINCIPAL, LIMPA COLUNAS MAL PREENCHIDA E FAZ PRÉ-PROCESSAMENTO DOS DADOS ===========
+#  ========== CRIA DATAFRAME PRINCIPAL, LIMPA COLUNAS MAL PREENCHIDAS E FAZ PRÉ-PROCESSAMENTO DOS DADOS ===========
 
-stateDictionary = {'RJ': 1, 'RS': 2, 'BA': 3, 'CE': 4, 'PE': 5, 'PR': 6, 'PB': 7, 'SP': 8, 'MG': 9, 'PI': 10, 
-                   'RO': 11, 'PA': 12, 'MT': 13, 'AL': 14, 'RN': 15, 'DF': 16, 'MA': 17, 'SC': 18, 'AM': 19,
-                   'ES': 20, 'MS': 21, 'TO': 22, 'GO': 23, 'AC': 24, 'AP': 25, 'SE': 26, 'RR': 27}
-sexDictionary = {'N': 0, 'M': 1, 'F': 2}
-booleanDictionary = {'N': 0, 'Y': 1}
-methodDictionary = {'presencial': 0, 'internet': 1, 'correio': 2}
-variableTypeDictionary = {}
+typeDictionary = {}
 
 data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
 data = data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+target = 'inadimplente'
+#print('Dados estatísticos do conjunto de dados')
+#print(data.describe(), '\n')
 
-print('Dados estatísticos do conjunto de dados')
-print(data.describe(), '\n')
+# Sanitiza os dados que podem conter nulos e converte valores para numéricos
 
-# Sanitiza os dados que podem conter nulos e converte valores para inteiros a fim de facilitar o cálculo de correlação posteriormente
+encoder = preprocessing.OrdinalEncoder(encoded_missing_value=-1)
+scaler = preprocessing.StandardScaler()
 for column in data:
-    if (data[column].dtypes != 'float64' and data[column].dtypes != 'int64'):
-        data[column] = data[column].apply(lambda x: 0 if x == ' ' else x)
-        data[column] = data[column].apply(lambda x: sexDictionary[x] if x in sexDictionary else x)
-        data[column] = data[column].apply(lambda x: stateDictionary[x] if x in stateDictionary else x)
-        data[column] = data[column].apply(lambda x: booleanDictionary[x] if x in booleanDictionary else x)
-        data[column] = data[column].apply(lambda x: methodDictionary[x] if x in methodDictionary else x)
-        data[column] = data[column].apply(lambda x: int(x))
-        variableTypeDictionary[column] = 'categorical'
-    else:
-        variableTypeDictionary[column] = 'continuous'
+    if(data[column].dtypes != 'float64' and data[column].dtypes != 'int64'):
+        data[[column]] = encoder.fit_transform(data[[column]])
+        typeDictionary[column] = 'categorical'
+        continue
+    data[[column]] = scaler.fit_transform(data[[column]])
+    data[[column]] = data[[column]].fillna(0)
+    typeDictionary[column] = 'continuous'
 
-print(data.head())
+print(data)
 
-# Gera gráficos de cada coluna para visualização
+correlations = {}
 
-#sns.scatterplot(x=data['renda_mensal_regular'], y=data['valor_patrimonio_pessoal'], hue=data['inadimplente'])
+def cramers_corrected_stat(confusion_matrix):
+    """ calculate Cramers V statistic for categorial-categorial association.
+        uses correction from Bergsma and Wicher, 
+        Journal of the Korean Statistical Society 42 (2013): 323-328
+    """
+    chi2 = stats.chi2_contingency(confusion_matrix)[0]
+    n = confusion_matrix.sum().sum()
+    phi2 = chi2/n
+    r,k = confusion_matrix.shape
+    phi2corr = max(0, phi2 - ((k-1)*(r-1))/(n-1))    
+    rcorr = r - ((r-1)**2)/(n-1)
+    kcorr = k - ((k-1)**2)/(n-1)
+    return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
 
-#sns.scatterplot(x=data['valor_patrimonio_pessoal'], y=data['renda_mensal_regular'], hue=data['inadimplente'])
-sns.lmplot(data=data, x='valor_patrimonio_pessoal', y='renda_mensal_regular', hue='inadimplente')
-plt.yscale('log')
-plt.xscale('log')
+for column in data:
+    if column == target: continue
+    if typeDictionary[column] == 'categorical':
+        confusion_matrix = pd.crosstab(data[column], data[target])
+        correlations[column] = cramers_corrected_stat(confusion_matrix)
+    if typeDictionary[column] == 'continuous':
+        correlations[column] = stats.pointbiserialr(data[column], data[target])[0]
+        
+npCorrelations = np.array(list(correlations.items()))
+dfCorrelations = pd.DataFrame(data=[[x[1] for x in npCorrelations]], columns=[x[0] for x in npCorrelations])
+print(dfCorrelations)
 
-#sns.barplot(x=data['inadimplente'], y=data['valor_patrimonio_pessoal'], hue=data['sexo'])
-
-#sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
-#plt.show()
-
-# Calcula os indíces de correlação com a coluna-alvo, retorna as cinco maiores correlações
-
-#corrcoefs = []
-
-#for column in data:
-#    if (column == 'inadimplente'): break
-#    if (column == 'id_solicitante'): continue
-#    if (variableTypeDictionary[column] == 'categorical'):
-#    corr = data[column].corr(data['inadimplente'], method='spearman')
-#    else:
-#        corr = stats.pointbiserialr(data[column], data['inadimplente'])
-#    corrcoefs.append([column, corr])
-
-
-#corrcoefs.sort(reverse=True, key = (lambda x: abs(x[1])))
-
-#selectedCoefs = [corrcoefs[i] for i in range(0,7)]
-
-#print(selectedCoefs)
-
-# Gera gráficos das sete maiores colunas com suas respectivas correlações, ajuda na visualização
+sns.heatmap(data = dfCorrelations)
