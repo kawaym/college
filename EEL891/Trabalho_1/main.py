@@ -62,7 +62,7 @@ for column in data:
         correlations[column] = stats.pointbiserialr(data[column], data[target])[0]
         
 npCorrelations = np.array(list(correlations.items()))
-dfCorrelations = pd.DataFrame(data=[[x[1] for x in npCorrelations]], columns=[x[0] for x in npCorrelations])
+dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', 'correlation'])
 print(dfCorrelations)
 
-sns.heatmap(data = dfCorrelations)
+sns.scatterplot(data=dfCorrelations)
