@@ -63,6 +63,7 @@ for column in data:
         
 npCorrelations = np.array(list(correlations.items()))
 dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', 'correlation'])
+dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 print(dfCorrelations)
 
-sns.scatterplot(data=dfCorrelations)
+sns.scatterplot(data=dfCorrelations, x='id', y='correlation')
