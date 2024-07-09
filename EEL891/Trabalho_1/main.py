@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
-from enum import Enum
 
 from sklearn import preprocessing
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
@@ -21,8 +21,8 @@ typeDictionary = {}
 
 training_data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
 training_data = training_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
-test_data = pd.read_csv(path + testFile, index_col='id_solicitante')
-test_data = test_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+unsupervised_test_data = pd.read_csv(path + testFile, index_col='id_solicitante')
+unsupervised_test_data = unsupervised_test_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
 
 target = 'inadimplente'
 #print('Dados estatísticos do conjunto de dados')
@@ -33,6 +33,7 @@ target = 'inadimplente'
 encoder = preprocessing.OrdinalEncoder(encoded_missing_value=-1)
 scaler = preprocessing.StandardScaler()
 for column in training_data:
+    if (column == 'inadimplente'): continue
     if(training_data[column].dtypes != 'float64' and training_data[column].dtypes != 'int64'):
         training_data[[column]] = encoder.fit_transform(training_data[[column]])
         typeDictionary[column] = 'categorical'
@@ -41,13 +42,13 @@ for column in training_data:
     training_data[[column]] = training_data[[column]].fillna(0)
     typeDictionary[column] = 'continuous'
 
-for column in test_data:
-    if(test_data[column].dtypes != 'float64' and test_data[column].dtypes != 'int64'):
-        test_data[[column]] = encoder.fit_transform(test_data[[column]])
+for column in unsupervised_test_data:
+    if(unsupervised_test_data[column].dtypes != 'float64' and unsupervised_test_data[column].dtypes != 'int64'):
+        unsupervised_test_data[[column]] = encoder.fit_transform(unsupervised_test_data[[column]])
         typeDictionary[column] = 'categorical'
         continue
-    test_data[[column]] = scaler.fit_transform(test_data[[column]])
-    test_data[[column]] = test_data[[column]].fillna(0)
+    unsupervised_test_data[[column]] = scaler.fit_transform(unsupervised_test_data[[column]])
+    unsupervised_test_data[[column]] = unsupervised_test_data[[column]].fillna(0)
     typeDictionary[column] = 'continuous'
 
 print(training_data)
@@ -82,29 +83,76 @@ dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 
 # Embaralha os dados para fazer as predições
 
-shuffled_data = training_data.sample(frac=1, random_state=3213)
-training_x = shuffled_data.iloc[:, :-1].values
-training_y = shuffled_data.iloc[:, -1].values
+training, supervised_test = train_test_split(training_data, test_size=0.3)
+training_x = training.iloc[:, :-1].values
+training_y = training.iloc[:, -1].values
+supervised_test_x = supervised_test.iloc[:, :-1].values
+supervised_test_y = supervised_test.iloc[:, -1].values
 
-test_x = test_data.iloc[:, :].values
+unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
 
 # CLASSSIFICADOR KNN
 
-classifier = KNeighborsClassifier(n_neighbors=1, weights='uniform')
-classifier = classifier.fit(training_x, training_y)
-answer_training_y = classifier.predict(training_x)
-answer_test_y = classifier.predict(test_x)
+# classifier = KNeighborsClassifier(n_neighbors=5, weights='uniform')
+# classifier = classifier.fit(training_x, training_y)
+# answer_training_y = classifier.predict(training_x)
 
-print("\nClassificador KNN (Dentro da Amostra)\n")
-total = len(training_y)
-acertos = sum(answer_training_y == training_y)
-erros = sum(answer_training_y != training_y)
+# print("\nClassificador KNN (Dentro da Amostra)\n")
+# total = len(training_y)
+# acertos = sum(answer_training_y == training_y)
+# erros = sum(answer_training_y != training_y)
 
-print("Total de amostras: ", total)
-print("Repostas corretas: ", acertos)
-print("Respostas erradas: ", erros)
+# print("Total de amostras: ", total)
+# print("Repostas corretas: ", acertos)
+# print("Respostas erradas: ", erros)
 
-acuracia = acertos / total
+# acuracia = acertos / total
 
-print("Acurácia = %.1f %%" % (100*acuracia))
-print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+# print("Acurácia = %.1f %%" % (100*acuracia))
+# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+# answer_supervised_test_y = classifier.predict(supervised_test_x)
+
+# print("\nClassificador KNN (Fora da Amostra)\n")
+# total = len(supervised_test_y)
+# acertos = sum(answer_supervised_test_y == supervised_test_y)
+# erros = sum(answer_supervised_test_y != supervised_test_y)
+
+# print("Total de amostras: ", total)
+# print("Repostas corretas: ", acertos)
+# print("Respostas erradas: ", erros)
+
+# acuracia = acertos / total
+
+# print("Acurácia = %.1f %%" % (100*acuracia))
+# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+def get_weights(A):
+    with np.errstate(divide='ignore'):
+        B = 1 / np.sqrt(A)
+    return B
+
+
+print("\n  K TREINO  TESTE ERRTRN ERRTST")
+print(" -- ------ ------ ------ ------")
+
+for k in range(1, 300):
+    # for k in range(10,501,10):
+
+    classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
+    classifier = classifier.fit(training_x, training_y)
+
+    answer_training_y = classifier.predict(training_x)
+    answer_supervised_test_y = classifier.predict(supervised_test_x)
+
+    acuracia_treino = sum(answer_training_y == training_y)/len(training_y)
+    acuracia_teste = sum(answer_supervised_test_y == supervised_test_y) / len(supervised_test_y)
+
+
+    print(
+        "%3d" % k,
+        "%6.1f" % (100*acuracia_treino),
+        "%6.1f" % (100*acuracia_teste),
+        "%6.1f" % (100*(1-acuracia_treino)),
+        "%6.1f" % (100*(1-acuracia_teste))
+    )
