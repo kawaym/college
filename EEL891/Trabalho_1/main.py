@@ -4,71 +4,155 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
-from enum import Enum
+
+from sklearn import preprocessing
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
 
 trainingFile = "/data/conjunto_de_treinamento.csv"
+testFile = "/data/conjunto_de_teste.csv"
 
-#  ========== CRIA DATAFRAME PRINCIPAL, LIMPA COLUNAS MAL PREENCHIDA E FAZ PRÉ-PROCESSAMENTO DOS DADOS ===========
+#  ========== CRIA DATAFRAME PRINCIPAL, LIMPA COLUNAS MAL PREENCHIDAS E FAZ PRÉ-PROCESSAMENTO DOS DADOS ===========
 
-stateDictionary = {'RJ': 1, 'RS': 2, 'BA': 3, 'CE': 4, 'PE': 5, 'PR': 6, 'PB': 7, 'SP': 8, 'MG': 9, 'PI': 10, 
-                   'RO': 11, 'PA': 12, 'MT': 13, 'AL': 14, 'RN': 15, 'DF': 16, 'MA': 17, 'SC': 18, 'AM': 19,
-                   'ES': 20, 'MS': 21, 'TO': 22, 'GO': 23, 'AC': 24, 'AP': 25, 'SE': 26, 'RR': 27}
-sexDictionary = {'N': 0, 'M': 1, 'F': 2}
-booleanDictionary = {'N': 0, 'Y': 1}
-methodDictionary = {'presencial': 0, 'internet': 1, 'correio': 2}
-variableTypeDictionary = {}
+typeDictionary = {}
 
-data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
-data = data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+training_data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
+training_data = training_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+unsupervised_test_data = pd.read_csv(path + testFile, index_col='id_solicitante')
+unsupervised_test_data = unsupervised_test_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
 
-print('Dados estatísticos do conjunto de dados')
-print(data.describe(), '\n')
+target = 'inadimplente'
+#print('Dados estatísticos do conjunto de dados')
+#print(data.describe(), '\n')
 
-# Sanitiza os dados que podem conter nulos e converte valores para inteiros a fim de facilitar o cálculo de correlação posteriormente
-for column in data:
-    if (data[column].dtypes != 'float64' and data[column].dtypes != 'int64'):
-        data[column] = data[column].apply(lambda x: 0 if x == ' ' else x)
-        data[column] = data[column].apply(lambda x: sexDictionary[x] if x in sexDictionary else x)
-        data[column] = data[column].apply(lambda x: stateDictionary[x] if x in stateDictionary else x)
-        data[column] = data[column].apply(lambda x: booleanDictionary[x] if x in booleanDictionary else x)
-        data[column] = data[column].apply(lambda x: methodDictionary[x] if x in methodDictionary else x)
-        data[column] = data[column].apply(lambda x: int(x))
-        variableTypeDictionary[column] = 'categorical'
-    else:
-        variableTypeDictionary[column] = 'continuous'
+# Sanitiza os dados que podem conter nulos e converte valores para numéricos
 
-print(data.head())
+encoder = preprocessing.OrdinalEncoder(encoded_missing_value=-1)
+scaler = preprocessing.StandardScaler()
+for column in training_data:
+    if (column == 'inadimplente'): continue
+    if(training_data[column].dtypes != 'float64' and training_data[column].dtypes != 'int64'):
+        training_data[[column]] = encoder.fit_transform(training_data[[column]])
+        typeDictionary[column] = 'categorical'
+        continue
+    training_data[[column]] = scaler.fit_transform(training_data[[column]])
+    training_data[[column]] = training_data[[column]].fillna(0)
+    typeDictionary[column] = 'continuous'
 
-# Gera gráficos de cada coluna para visualização
+for column in unsupervised_test_data:
+    if(unsupervised_test_data[column].dtypes != 'float64' and unsupervised_test_data[column].dtypes != 'int64'):
+        unsupervised_test_data[[column]] = encoder.fit_transform(unsupervised_test_data[[column]])
+        typeDictionary[column] = 'categorical'
+        continue
+    unsupervised_test_data[[column]] = scaler.fit_transform(unsupervised_test_data[[column]])
+    unsupervised_test_data[[column]] = unsupervised_test_data[[column]].fillna(0)
+    typeDictionary[column] = 'continuous'
 
-#sns.scatterplot(x=data['renda_mensal_regular'], y=data['valor_patrimonio_pessoal'], hue=data['inadimplente'])
+print(training_data)
 
-sns.barplot(x=data['inadimplente'], y=data['valor_patrimonio_pessoal'], hue=data['sexo'])
+correlations = {}
 
-#sns.swarmplot(x=data['inadimplente'], y=data['sexo'])
-#plt.show()
+def cramers_corrected_stat(confusion_matrix):
+    """ calculate Cramers V statistic for categorial-categorial association.
+        uses correction from Bergsma and Wicher, 
+        Journal of the Korean Statistical Society 42 (2013): 323-328
+    """
+    chi2 = stats.chi2_contingency(confusion_matrix)[0]
+    n = confusion_matrix.sum().sum()
+    phi2 = chi2/n
+    r,k = confusion_matrix.shape
+    phi2corr = max(0, phi2 - ((k-1)*(r-1))/(n-1))    
+    rcorr = r - ((r-1)**2)/(n-1)
+    kcorr = k - ((k-1)**2)/(n-1)
+    return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
 
-# Calcula os indíces de correlação com a coluna-alvo, retorna as cinco maiores correlações
+for column in training_data:
+    if column == target: continue
+    if typeDictionary[column] == 'categorical':
+        confusion_matrix = pd.crosstab(training_data[column], training_data[target])
+        correlations[column] = cramers_corrected_stat(confusion_matrix)
+    if typeDictionary[column] == 'continuous':
+        correlations[column] = stats.pointbiserialr(training_data[column], training_data[target])[0]
+        
+npCorrelations = np.array(list(correlations.items()))
+dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', 'correlation'])
+dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 
-#corrcoefs = []
+# Embaralha os dados para fazer as predições
 
-#for column in data:
-#    if (column == 'inadimplente'): break
-#    if (column == 'id_solicitante'): continue
-#    if (variableTypeDictionary[column] == 'categorical'):
-#    corr = data[column].corr(data['inadimplente'], method='spearman')
-#    else:
-#        corr = stats.pointbiserialr(data[column], data['inadimplente'])
-#    corrcoefs.append([column, corr])
+training, supervised_test = train_test_split(training_data, test_size=0.3)
+training_x = training.iloc[:, :-1].values
+training_y = training.iloc[:, -1].values
+supervised_test_x = supervised_test.iloc[:, :-1].values
+supervised_test_y = supervised_test.iloc[:, -1].values
+
+unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
+
+# CLASSSIFICADOR KNN
+
+# classifier = KNeighborsClassifier(n_neighbors=5, weights='uniform')
+# classifier = classifier.fit(training_x, training_y)
+# answer_training_y = classifier.predict(training_x)
+
+# print("\nClassificador KNN (Dentro da Amostra)\n")
+# total = len(training_y)
+# acertos = sum(answer_training_y == training_y)
+# erros = sum(answer_training_y != training_y)
+
+# print("Total de amostras: ", total)
+# print("Repostas corretas: ", acertos)
+# print("Respostas erradas: ", erros)
+
+# acuracia = acertos / total
+
+# print("Acurácia = %.1f %%" % (100*acuracia))
+# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+# answer_supervised_test_y = classifier.predict(supervised_test_x)
+
+# print("\nClassificador KNN (Fora da Amostra)\n")
+# total = len(supervised_test_y)
+# acertos = sum(answer_supervised_test_y == supervised_test_y)
+# erros = sum(answer_supervised_test_y != supervised_test_y)
+
+# print("Total de amostras: ", total)
+# print("Repostas corretas: ", acertos)
+# print("Respostas erradas: ", erros)
+
+# acuracia = acertos / total
+
+# print("Acurácia = %.1f %%" % (100*acuracia))
+# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+def get_weights(A):
+    with np.errstate(divide='ignore'):
+        B = 1 / np.sqrt(A)
+    return B
 
 
-#corrcoefs.sort(reverse=True, key = (lambda x: abs(x[1])))
+print("\n  K TREINO  TESTE ERRTRN ERRTST")
+print(" -- ------ ------ ------ ------")
 
-#selectedCoefs = [corrcoefs[i] for i in range(0,7)]
+for k in range(1, 300):
+    # for k in range(10,501,10):
 
-#print(selectedCoefs)
+    classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
+    classifier = classifier.fit(training_x, training_y)
 
-# Gera gráficos das sete maiores colunas com suas respectivas correlações, ajuda na visualização
+    answer_training_y = classifier.predict(training_x)
+    answer_supervised_test_y = classifier.predict(supervised_test_x)
+
+    acuracia_treino = sum(answer_training_y == training_y)/len(training_y)
+    acuracia_teste = sum(answer_supervised_test_y == supervised_test_y) / len(supervised_test_y)
+
+
+    print(
+        "%3d" % k,
+        "%6.1f" % (100*acuracia_treino),
+        "%6.1f" % (100*acuracia_teste),
+        "%6.1f" % (100*(1-acuracia_treino)),
+        "%6.1f" % (100*(1-acuracia_teste))
+    )
