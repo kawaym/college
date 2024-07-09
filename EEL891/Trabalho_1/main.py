@@ -5,19 +5,25 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 from enum import Enum
+
 from sklearn import preprocessing
+from sklearn.neighbors import KNeighborsClassifier
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
 
 trainingFile = "/data/conjunto_de_treinamento.csv"
+testFile = "/data/conjunto_de_teste.csv"
 
 #  ========== CRIA DATAFRAME PRINCIPAL, LIMPA COLUNAS MAL PREENCHIDAS E FAZ PRÉ-PROCESSAMENTO DOS DADOS ===========
 
 typeDictionary = {}
 
-data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
-data = data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+training_data = pd.read_csv(path + trainingFile, index_col='id_solicitante')
+training_data = training_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+test_data = pd.read_csv(path + testFile, index_col='id_solicitante')
+test_data = test_data.drop(['grau_instrucao', 'possui_telefone_celular', 'qtde_contas_bancarias_especiais'], axis=1)
+
 target = 'inadimplente'
 #print('Dados estatísticos do conjunto de dados')
 #print(data.describe(), '\n')
@@ -26,16 +32,25 @@ target = 'inadimplente'
 
 encoder = preprocessing.OrdinalEncoder(encoded_missing_value=-1)
 scaler = preprocessing.StandardScaler()
-for column in data:
-    if(data[column].dtypes != 'float64' and data[column].dtypes != 'int64'):
-        data[[column]] = encoder.fit_transform(data[[column]])
+for column in training_data:
+    if(training_data[column].dtypes != 'float64' and training_data[column].dtypes != 'int64'):
+        training_data[[column]] = encoder.fit_transform(training_data[[column]])
         typeDictionary[column] = 'categorical'
         continue
-    data[[column]] = scaler.fit_transform(data[[column]])
-    data[[column]] = data[[column]].fillna(0)
+    training_data[[column]] = scaler.fit_transform(training_data[[column]])
+    training_data[[column]] = training_data[[column]].fillna(0)
     typeDictionary[column] = 'continuous'
 
-print(data)
+for column in test_data:
+    if(test_data[column].dtypes != 'float64' and test_data[column].dtypes != 'int64'):
+        test_data[[column]] = encoder.fit_transform(test_data[[column]])
+        typeDictionary[column] = 'categorical'
+        continue
+    test_data[[column]] = scaler.fit_transform(test_data[[column]])
+    test_data[[column]] = test_data[[column]].fillna(0)
+    typeDictionary[column] = 'continuous'
+
+print(training_data)
 
 correlations = {}
 
@@ -53,17 +68,43 @@ def cramers_corrected_stat(confusion_matrix):
     kcorr = k - ((k-1)**2)/(n-1)
     return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
 
-for column in data:
+for column in training_data:
     if column == target: continue
     if typeDictionary[column] == 'categorical':
-        confusion_matrix = pd.crosstab(data[column], data[target])
+        confusion_matrix = pd.crosstab(training_data[column], training_data[target])
         correlations[column] = cramers_corrected_stat(confusion_matrix)
     if typeDictionary[column] == 'continuous':
-        correlations[column] = stats.pointbiserialr(data[column], data[target])[0]
+        correlations[column] = stats.pointbiserialr(training_data[column], training_data[target])[0]
         
 npCorrelations = np.array(list(correlations.items()))
 dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', 'correlation'])
 dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
-print(dfCorrelations)
 
-sns.scatterplot(data=dfCorrelations, x='id', y='correlation')
+# Embaralha os dados para fazer as predições
+
+shuffled_data = training_data.sample(frac=1, random_state=3213)
+training_x = shuffled_data.iloc[:, :-1].values
+training_y = shuffled_data.iloc[:, -1].values
+
+test_x = test_data.iloc[:, :].values
+
+# CLASSSIFICADOR KNN
+
+classifier = KNeighborsClassifier(n_neighbors=1, weights='uniform')
+classifier = classifier.fit(training_x, training_y)
+answer_training_y = classifier.predict(training_x)
+answer_test_y = classifier.predict(test_x)
+
+print("\nClassificador KNN (Dentro da Amostra)\n")
+total = len(training_y)
+acertos = sum(answer_training_y == training_y)
+erros = sum(answer_training_y != training_y)
+
+print("Total de amostras: ", total)
+print("Repostas corretas: ", acertos)
+print("Respostas erradas: ", erros)
+
+acuracia = acertos / total
+
+print("Acurácia = %.1f %%" % (100*acuracia))
+print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
