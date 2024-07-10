@@ -8,6 +8,7 @@ import seaborn as sns
 from sklearn import preprocessing
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import RFE
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
@@ -136,7 +137,7 @@ def get_weights(A):
 print("\n  K TREINO  TESTE ERRTRN ERRTST")
 print(" -- ------ ------ ------ ------")
 
-for k in range(1, 300):
+for k in range(1, 31):
     # for k in range(10,501,10):
 
     classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
@@ -156,3 +157,10 @@ for k in range(1, 300):
         "%6.1f" % (100*(1-acuracia_treino)),
         "%6.1f" % (100*(1-acuracia_teste))
     )
+classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
+classifier = classifier.fit(training_x, training_y)
+rfeMod = RFE(classifier, n_features_to_select=15)
+rfeMod = rfeMod.fit(training_x, training_y)
+answer_supervised_test_y = rfeMod.predict(supervised_test_x)
+
+print(answer_supervised_test_y)
