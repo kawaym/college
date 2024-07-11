@@ -12,6 +12,8 @@ from sklearn.feature_selection import RFE
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import AdaBoostClassifier
 
 
 # Utilitários
@@ -212,3 +214,18 @@ classifier = ExtraTreesClassifier(n_estimators=100, max_features=17)
 results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Floresta de Decisão")
+
+# Gradient Boosting Classifier
+
+classifier = GradientBoostingClassifier(learning_rate=0.1, max_features=1, subsample=0.5, n_estimators=100)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Boosting de Gradiente")
+
+# Ada Boosting Classifier
+
+classifier = AdaBoostClassifier(estimator=DecisionTreeClassifier(), learning_rate=0.1, n_estimators=100)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Boosting Ada")
+
