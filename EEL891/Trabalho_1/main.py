@@ -9,6 +9,7 @@ from sklearn import preprocessing
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
+from sklearn.naive_bayes import BernoulliNB
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
@@ -128,39 +129,71 @@ unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
 # print("Acurácia = %.1f %%" % (100*acuracia))
 # print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
 
-def get_weights(A):
-    with np.errstate(divide='ignore'):
-        B = 1 / np.sqrt(A)
-    return B
+# def get_weights(A):
+#     with np.errstate(divide='ignore'):
+#         B = 1 / np.sqrt(A)
+#     return B
 
 
-print("\n  K TREINO  TESTE ERRTRN ERRTST")
-print(" -- ------ ------ ------ ------")
+# print("\n  K TREINO  TESTE ERRTRN ERRTST")
+# print(" -- ------ ------ ------ ------")
 
-for k in range(1, 31):
-    # for k in range(10,501,10):
+# for k in range(1, 31):
+#     # for k in range(10,501,10):
 
-    classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
-    classifier = classifier.fit(training_x, training_y)
+#     classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
+#     classifier = classifier.fit(training_x, training_y)
 
-    answer_training_y = classifier.predict(training_x)
-    answer_supervised_test_y = classifier.predict(supervised_test_x)
+#     answer_training_y = classifier.predict(training_x)
+#     answer_supervised_test_y = classifier.predict(supervised_test_x)
 
-    acuracia_treino = sum(answer_training_y == training_y)/len(training_y)
-    acuracia_teste = sum(answer_supervised_test_y == supervised_test_y) / len(supervised_test_y)
+#     acuracia_treino = sum(answer_training_y == training_y)/len(training_y)
+#     acuracia_teste = sum(answer_supervised_test_y == supervised_test_y) / len(supervised_test_y)
 
 
-    print(
-        "%3d" % k,
-        "%6.1f" % (100*acuracia_treino),
-        "%6.1f" % (100*acuracia_teste),
-        "%6.1f" % (100*(1-acuracia_treino)),
-        "%6.1f" % (100*(1-acuracia_teste))
-    )
+#     print(
+#         "%3d" % k,
+#         "%6.1f" % (100*acuracia_treino),
+#         "%6.1f" % (100*acuracia_teste),
+#         "%6.1f" % (100*(1-acuracia_treino)),
+#         "%6.1f" % (100*(1-acuracia_teste))
+#     )
+
+
 classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
 classifier = classifier.fit(training_x, training_y)
-rfeMod = RFE(classifier, n_features_to_select=15)
-rfeMod = rfeMod.fit(training_x, training_y)
-answer_supervised_test_y = rfeMod.predict(supervised_test_x)
+results = classifier.predict(supervised_test_x)
 
-print(answer_supervised_test_y)
+print("\nClassificador Bernoulli Naive Bayes (Fora da Amostra)\n")
+total = len(results)
+acertos = sum(results == supervised_test_y)
+erros = sum(results != supervised_test_y)
+
+print("Total de amostras: ", total)
+print("Repostas corretas: ", acertos)
+print("Respostas erradas: ", erros)
+
+acuracia = acertos / total
+
+print("Acurácia = %.1f %%" % (100*acuracia))
+print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+# Naive Bayes Classifier
+
+classifier = BernoulliNB(alpha=1.0)
+classifier = classifier.fit(training_x, training_y)
+results = classifier.predict(supervised_test_x)
+
+print("\nClassificador Bernoulli Naive Bayes (Fora da Amostra)\n")
+total = len(results)
+acertos = sum(results == supervised_test_y)
+erros = sum(results != supervised_test_y)
+
+print("Total de amostras: ", total)
+print("Repostas corretas: ", acertos)
+print("Respostas erradas: ", erros)
+
+acuracia = acertos / total
+
+print("Acurácia = %.1f %%" % (100*acuracia))
+print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
