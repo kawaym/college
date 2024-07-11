@@ -8,7 +8,7 @@ import matplotlib.cm as cm
 
 
 from sklearn import preprocessing
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
@@ -17,7 +17,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import AdaBoostClassifier
-
+from sklearn.ensemble import VotingClassifier
 
 # Utilitários
 
@@ -25,24 +25,18 @@ def printResults(results, targetY, name, inside=True):
     text = "Fora"
     if (inside): text = "Dentro"
     print(f"\nClassificador {name} ({text} da Amostra)\n")
-    total = len(results)
-    acertos = sum(results == supervised_test_y)
-    erros = sum(results != supervised_test_y)
 
     createMatrixConfusion(target = targetY, predicted = results, name = name)    
     
-    print("Total de amostras: ", total)
-    print("Repostas corretas: ", acertos)
-    print("Respostas erradas: ", erros)
-
-    acuracia = acertos / total
-
-    print("Acurácia = %.1f %%" % (100*acuracia))
-    print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+    print(createClassificationReport(target = targetY, predicted = results))
     
 def createResults(classifier, training_x, training_y, targetX):
     classifier.fit(training_x, training_y)
     return classifier, classifier.predict(targetX)
+
+def createClassificationReport(target, predicted, output_dict=False):
+    report = classification_report(y_true=target, y_pred=predicted, target_names=['Negative', 'Positive'], output_dict=output_dict)
+    return report
 
 def createMatrixConfusion(target, predicted, name="Modelo de Classificação"):
     labels = ['Negativo', 'Positivo']
@@ -136,7 +130,24 @@ unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
 
 # KNN Classifier 
 
-classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
+k_number = 1
+recall = 0.0
+
+for k in range(1, 31):
+
+    classifier = KNeighborsClassifier(n_neighbors=k, weights="distance")
+    classifier = classifier.fit(training_x, training_y)
+    _, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+    
+    report = createClassificationReport(target=supervised_test_y, predicted=results, output_dict=True)
+    
+    recall_extracted = report['Positive']['recall']
+    
+    if (recall_extracted > recall):
+        k_number = k
+        recall = recall_extracted
+
+classifier = KNeighborsClassifier(n_neighbors=k_number, weights='uniform')
 KNNClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "KNN")
@@ -150,14 +161,14 @@ printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 # Decision Tree Classifier 
 
-classifier = DecisionTreeClassifier(criterion='gini', max_features=17, max_depth=7)
+classifier = DecisionTreeClassifier(criterion='gini', max_features=20, max_depth=7)
 DTClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
 
 # Decision Forest Classifier
 
-classifier = ExtraTreesClassifier(n_estimators=100, max_features=17)
+classifier = ExtraTreesClassifier(n_estimators=100, max_features=20)
 DFClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Floresta de Decisão")
@@ -176,3 +187,12 @@ ABClassifier, results = createResults(classifier, training_x, training_y, target
 
 printResults(results, supervised_test_y, "Boosting Ada")
 
+# Voting Classifier
+
+estimators = [('knn', KNNClassifier), ('nb', NBClassifier), ('dt', DTClassifier), ('gb', GBClassifier), ('ab', ABClassifier)]
+estimators_weights = [1 for _ in estimators]
+
+classifier = VotingClassifier(estimators=estimators, voting='hard', weights=estimators_weights)
+VClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Votação")
