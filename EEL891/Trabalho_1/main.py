@@ -12,6 +12,43 @@ from sklearn.feature_selection import RFE
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
 
+
+# Utilitários
+
+def printResults(results, targetY, name, inside=True):
+    text = "Fora"
+    if (inside): text = "Dentro"
+    print(f"\nClassificador {name} ({text} da Amostra)\n")
+    total = len(results)
+    acertos = sum(results == supervised_test_y)
+    erros = sum(results != supervised_test_y)
+
+    print("Total de amostras: ", total)
+    print("Repostas corretas: ", acertos)
+    print("Respostas erradas: ", erros)
+
+    acuracia = acertos / total
+
+    print("Acurácia = %.1f %%" % (100*acuracia))
+    print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+
+def cramers_corrected_stat(confusion_matrix):
+    """ calculate Cramers V statistic for categorial-categorial association.
+        uses correction from Bergsma and Wicher, 
+        Journal of the Korean Statistical Society 42 (2013): 323-328
+    """
+    chi2 = stats.chi2_contingency(confusion_matrix)[0]
+    n = confusion_matrix.sum().sum()
+    phi2 = chi2/n
+    r,k = confusion_matrix.shape
+    phi2corr = max(0, phi2 - ((k-1)*(r-1))/(n-1))    
+    rcorr = r - ((r-1)**2)/(n-1)
+    kcorr = k - ((k-1)**2)/(n-1)
+    return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
+
+# Inicio
+
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
 
@@ -54,23 +91,7 @@ for column in unsupervised_test_data:
     unsupervised_test_data[[column]] = unsupervised_test_data[[column]].fillna(0)
     typeDictionary[column] = 'continuous'
 
-print(training_data)
-
 correlations = {}
-
-def cramers_corrected_stat(confusion_matrix):
-    """ calculate Cramers V statistic for categorial-categorial association.
-        uses correction from Bergsma and Wicher, 
-        Journal of the Korean Statistical Society 42 (2013): 323-328
-    """
-    chi2 = stats.chi2_contingency(confusion_matrix)[0]
-    n = confusion_matrix.sum().sum()
-    phi2 = chi2/n
-    r,k = confusion_matrix.shape
-    phi2corr = max(0, phi2 - ((k-1)*(r-1))/(n-1))    
-    rcorr = r - ((r-1)**2)/(n-1)
-    kcorr = k - ((k-1)**2)/(n-1)
-    return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
 
 for column in training_data:
     if column == target: continue
@@ -165,19 +186,7 @@ classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
 classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
-print("\nClassificador Bernoulli Naive Bayes (Dentro da Amostra)\n")
-total = len(results)
-acertos = sum(results == supervised_test_y)
-erros = sum(results != supervised_test_y)
-
-print("Total de amostras: ", total)
-print("Repostas corretas: ", acertos)
-print("Respostas erradas: ", erros)
-
-acuracia = acertos / total
-
-print("Acurácia = %.1f %%" % (100*acuracia))
-print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+printResults(results, supervised_test_y, "KNN")
 
 # Naive Bayes Classifier
 
@@ -185,19 +194,7 @@ classifier = BernoulliNB(alpha=1.0)
 classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
-print("\nClassificador Bernoulli Naive Bayes (Dentro da Amostra)\n")
-total = len(results)
-acertos = sum(results == supervised_test_y)
-erros = sum(results != supervised_test_y)
-
-print("Total de amostras: ", total)
-print("Repostas corretas: ", acertos)
-print("Respostas erradas: ", erros)
-
-acuracia = acertos / total
-
-print("Acurácia = %.1f %%" % (100*acuracia))
-print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 # Decision Tree Classifier 
 
@@ -205,16 +202,4 @@ classifier = DecisionTreeClassifier(criterion='gini', max_features=17, max_depth
 classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
-print("\nClassificar Árvore de Decisão (Dentro da Amostra)\n")
-total = len(results)
-acertos = sum(results == supervised_test_y)
-erros = sum(results != supervised_test_y)
-
-print("Total de amostras: ", total)
-print("Respostas corretas: ", acertos)
-print("Respostas erradas: ", erros)
-
-acuracia = acertos / total
-
-print("Acurácia = %.1f %%" % (100*acuracia))
-print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+printResults(results, supervised_test_y, "Árvore de Decisão")
