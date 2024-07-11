@@ -10,6 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from sklearn.naive_bayes import BernoulliNB
+from sklearn.tree import DecisionTreeClassifier
 
 if sys.platform.startswith('win32'):
     path="E:/Projetos/college/EEL891/Trabalho_1"
@@ -164,7 +165,7 @@ classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
 classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
-print("\nClassificador Bernoulli Naive Bayes (Fora da Amostra)\n")
+print("\nClassificador Bernoulli Naive Bayes (Dentro da Amostra)\n")
 total = len(results)
 acertos = sum(results == supervised_test_y)
 erros = sum(results != supervised_test_y)
@@ -184,13 +185,33 @@ classifier = BernoulliNB(alpha=1.0)
 classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
-print("\nClassificador Bernoulli Naive Bayes (Fora da Amostra)\n")
+print("\nClassificador Bernoulli Naive Bayes (Dentro da Amostra)\n")
 total = len(results)
 acertos = sum(results == supervised_test_y)
 erros = sum(results != supervised_test_y)
 
 print("Total de amostras: ", total)
 print("Repostas corretas: ", acertos)
+print("Respostas erradas: ", erros)
+
+acuracia = acertos / total
+
+print("Acurácia = %.1f %%" % (100*acuracia))
+print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
+
+# Decision Tree Classifier 
+
+classifier = DecisionTreeClassifier(criterion='gini', max_features=17, max_depth=7)
+classifier = classifier.fit(training_x, training_y)
+results = classifier.predict(supervised_test_x)
+
+print("\nClassificar Árvore de Decisão (Dentro da Amostra)\n")
+total = len(results)
+acertos = sum(results == supervised_test_y)
+erros = sum(results != supervised_test_y)
+
+print("Total de amostras: ", total)
+print("Respostas corretas: ", acertos)
 print("Respostas erradas: ", erros)
 
 acuracia = acertos / total
