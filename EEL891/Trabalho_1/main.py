@@ -4,8 +4,11 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
+import matplotlib.cm as cm
+
 
 from sklearn import preprocessing
+from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
@@ -26,6 +29,8 @@ def printResults(results, targetY, name, inside=True):
     acertos = sum(results == supervised_test_y)
     erros = sum(results != supervised_test_y)
 
+    createMatrixConfusion(target = targetY, predicted = results, name = name)    
+    
     print("Total de amostras: ", total)
     print("Repostas corretas: ", acertos)
     print("Respostas erradas: ", erros)
@@ -34,11 +39,18 @@ def printResults(results, targetY, name, inside=True):
 
     print("Acurácia = %.1f %%" % (100*acuracia))
     print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
-
+    
 def createResults(classifier, training_x, training_y, targetX):
     classifier.fit(training_x, training_y)
-    return classifier.predict(targetX)
-    
+    return classifier, classifier.predict(targetX)
+
+def createMatrixConfusion(target, predicted, name="Modelo de Classificação"):
+    labels = ['Negativo', 'Positivo']
+    matrix = confusion_matrix(y_true=target, y_pred=predicted)
+    sns.heatmap(matrix, annot=True, cmap=cm.gray, xticklabels=labels, yticklabels=labels, fmt=".10g")
+    plt.title(f"Matriz de Confusão para {name}")
+    plt.show()
+    return matrix    
 
 def cramers_corrected_stat(confusion_matrix):
     """ calculate Cramers V statistic for categorial-categorial association.
@@ -103,8 +115,8 @@ correlations = {}
 for column in training_data:
     if column == target: continue
     if typeDictionary[column] == 'categorical':
-        confusion_matrix = pd.crosstab(training_data[column], training_data[target])
-        correlations[column] = cramers_corrected_stat(confusion_matrix)
+        confusion = pd.crosstab(training_data[column], training_data[target])
+        correlations[column] = cramers_corrected_stat(confusion)
     if typeDictionary[column] == 'continuous':
         correlations[column] = stats.pointbiserialr(training_data[column], training_data[target])[0]
         
@@ -122,110 +134,45 @@ supervised_test_y = supervised_test.iloc[:, -1].values
 
 unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
 
-# CLASSSIFICADOR KNN
-
-# classifier = KNeighborsClassifier(n_neighbors=5, weights='uniform')
-# classifier = classifier.fit(training_x, training_y)
-# answer_training_y = classifier.predict(training_x)
-
-# print("\nClassificador KNN (Dentro da Amostra)\n")
-# total = len(training_y)
-# acertos = sum(answer_training_y == training_y)
-# erros = sum(answer_training_y != training_y)
-
-# print("Total de amostras: ", total)
-# print("Repostas corretas: ", acertos)
-# print("Respostas erradas: ", erros)
-
-# acuracia = acertos / total
-
-# print("Acurácia = %.1f %%" % (100*acuracia))
-# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
-
-# answer_supervised_test_y = classifier.predict(supervised_test_x)
-
-# print("\nClassificador KNN (Fora da Amostra)\n")
-# total = len(supervised_test_y)
-# acertos = sum(answer_supervised_test_y == supervised_test_y)
-# erros = sum(answer_supervised_test_y != supervised_test_y)
-
-# print("Total de amostras: ", total)
-# print("Repostas corretas: ", acertos)
-# print("Respostas erradas: ", erros)
-
-# acuracia = acertos / total
-
-# print("Acurácia = %.1f %%" % (100*acuracia))
-# print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
-
-# def get_weights(A):
-#     with np.errstate(divide='ignore'):
-#         B = 1 / np.sqrt(A)
-#     return B
-
-
-# print("\n  K TREINO  TESTE ERRTRN ERRTST")
-# print(" -- ------ ------ ------ ------")
-
-# for k in range(1, 31):
-#     # for k in range(10,501,10):
-
-#     classifier = KNeighborsClassifier(n_neighbors=k, weights="uniform")
-#     classifier = classifier.fit(training_x, training_y)
-
-#     answer_training_y = classifier.predict(training_x)
-#     answer_supervised_test_y = classifier.predict(supervised_test_x)
-
-#     acuracia_treino = sum(answer_training_y == training_y)/len(training_y)
-#     acuracia_teste = sum(answer_supervised_test_y == supervised_test_y) / len(supervised_test_y)
-
-
-#     print(
-#         "%3d" % k,
-#         "%6.1f" % (100*acuracia_treino),
-#         "%6.1f" % (100*acuracia_teste),
-#         "%6.1f" % (100*(1-acuracia_treino)),
-#         "%6.1f" % (100*(1-acuracia_teste))
-#     )
-
+# KNN Classifier 
 
 classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+KNNClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "KNN")
 
 # Naive Bayes Classifier
 
 classifier = BernoulliNB(alpha=1.0)
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+NBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 # Decision Tree Classifier 
 
 classifier = DecisionTreeClassifier(criterion='gini', max_features=17, max_depth=7)
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+DTClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
 
 # Decision Forest Classifier
 
 classifier = ExtraTreesClassifier(n_estimators=100, max_features=17)
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+DFClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Floresta de Decisão")
 
 # Gradient Boosting Classifier
 
 classifier = GradientBoostingClassifier(learning_rate=0.1, max_features=1, subsample=0.5, n_estimators=100)
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+GBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Boosting de Gradiente")
 
 # Ada Boosting Classifier
 
 classifier = AdaBoostClassifier(estimator=DecisionTreeClassifier(), learning_rate=0.1, n_estimators=100)
-results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+ABClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Boosting Ada")
 
