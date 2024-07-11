@@ -8,11 +8,11 @@ import matplotlib.cm as cm
 
 
 from sklearn import preprocessing
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.feature_selection import RFE
-from sklearn.naive_bayes import BernoulliNB
+from sklearn.naive_bayes import BernoulliNB, GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import GradientBoostingClassifier
@@ -118,9 +118,24 @@ npCorrelations = np.array(list(correlations.items()))
 dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', 'correlation'])
 dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 
+# Seleciona as features mais performáticas
+print(training_data)
+
+last_y = training_data.iloc[:,-1]
+
+selector = SelectKBest(f_classif, k=5)
+selector.fit(training_data.iloc[:, :-1], training_data.iloc[:,-1])
+cols_idxs = selector.get_support(indices=True)
+training_data = training_data.iloc[:,cols_idxs]
+training_data.insert(len(training_data.columns), 'inadimplente', last_y.values)
+
+print(training_data)
+
+# training_data = SelectKBest(f_classif, k=10).fit_transform(training_data[:, :-1], training_data[:, -1])
+
 # Embaralha os dados para fazer as predições
 
-training, supervised_test = train_test_split(training_data, test_size=0.3)
+training, supervised_test = train_test_split(training_data, test_size=0.25)
 training_x = training.iloc[:, :-1].values
 training_y = training.iloc[:, -1].values
 supervised_test_x = supervised_test.iloc[:, :-1].values
@@ -155,13 +170,21 @@ printResults(results, supervised_test_y, "KNN")
 # Naive Bayes Classifier
 
 classifier = BernoulliNB(alpha=1.0)
-NBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+BNBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 # Decision Tree Classifier 
 
-classifier = DecisionTreeClassifier(criterion='gini', max_features=20, max_depth=7)
+feature_number = 1
+depth_number = 1
+recall = 0.0
+
+for k in range(1, 20):
+    classifier = DecisionTreeClassifier(criterion='gini', max_features=k, max_depth=7)
+
+
+classifier = DecisionTreeClassifier(criterion='gini', max_features=5, max_depth=7)
 DTClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
@@ -189,7 +212,7 @@ printResults(results, supervised_test_y, "Boosting Ada")
 
 # Voting Classifier
 
-estimators = [('knn', KNNClassifier), ('nb', NBClassifier), ('dt', DTClassifier), ('gb', GBClassifier), ('ab', ABClassifier)]
+estimators = [('knn', KNNClassifier), ('bnb', BNBClassifier), ('dt', DTClassifier), ('gb', GBClassifier), ('ab', ABClassifier)]
 estimators_weights = [1 for _ in estimators]
 
 classifier = VotingClassifier(estimators=estimators, voting='hard', weights=estimators_weights)
