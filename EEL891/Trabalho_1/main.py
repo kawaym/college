@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from sklearn.naive_bayes import BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import ExtraTreesClassifier
 
 
 # Utilitários
@@ -203,3 +204,11 @@ classifier = classifier.fit(training_x, training_y)
 results = classifier.predict(supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
+
+# Decision Forest Classifier
+
+classifier = ExtraTreesClassifier(n_estimators=100, max_features=17)
+classifier = classifier.fit(training_x, training_y)
+results = classifier.predict(supervised_test_x)
+
+printResults(results, supervised_test_y, "Floresta de Decisão")
