@@ -33,6 +33,10 @@ def printResults(results, targetY, name, inside=True):
     print("Acurácia = %.1f %%" % (100*acuracia))
     print("Taxa Erro = %4.1f %%" % (100*(1-acuracia)))
 
+def createResults(classifier, training_x, training_y, targetX):
+    classifier.fit(training_x, training_y)
+    return classifier.predict(targetX)
+    
 
 def cramers_corrected_stat(confusion_matrix):
     """ calculate Cramers V statistic for categorial-categorial association.
@@ -184,31 +188,27 @@ unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
 
 
 classifier = KNeighborsClassifier(n_neighbors=17, weights='uniform')
-classifier = classifier.fit(training_x, training_y)
-results = classifier.predict(supervised_test_x)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "KNN")
 
 # Naive Bayes Classifier
 
 classifier = BernoulliNB(alpha=1.0)
-classifier = classifier.fit(training_x, training_y)
-results = classifier.predict(supervised_test_x)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 # Decision Tree Classifier 
 
 classifier = DecisionTreeClassifier(criterion='gini', max_features=17, max_depth=7)
-classifier = classifier.fit(training_x, training_y)
-results = classifier.predict(supervised_test_x)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
 
 # Decision Forest Classifier
 
 classifier = ExtraTreesClassifier(n_estimators=100, max_features=17)
-classifier = classifier.fit(training_x, training_y)
-results = classifier.predict(supervised_test_x)
+results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Floresta de Decisão")
