@@ -20,6 +20,8 @@ from sklearn.metrics import confusion_matrix, r2_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVR
 
 # Utilitários
 
@@ -115,7 +117,7 @@ dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 # Seleciona as features mais performáticas
 last_y = training_data.iloc[:,-1]
 
-selector = SelectKBest(f_regression, k=4)
+selector = SelectKBest(f_regression, k=8)
 selector.fit(training_data.iloc[:, :-1], training_data.iloc[:,-1])
 cols_idxs = selector.get_support(indices=True)
 training_data = training_data.iloc[:,cols_idxs]
@@ -123,7 +125,7 @@ training_data.insert(len(training_data.columns), 'preco', last_y.values)
 
 # Embaralha os dados para fazer as predições
 
-training, supervised_test = train_test_split(training_data, test_size=0.3, random_state=124324)
+training, supervised_test = train_test_split(training_data, test_size=0.25)
 training_x = training.iloc[:, :-1]
 training_y = training.iloc[:, -1]
 supervised_test_x = supervised_test.iloc[:, :-1]
@@ -140,14 +142,28 @@ printResults(results, supervised_test_y, "Linear")
 
 # Stochastic Gradient Descent Regressor
 
-regressor = SGDRegressor(loss='squared_error', alpha=0.1, penalty='l2')
+regressor = SGDRegressor(loss='huber', alpha=0.1, penalty='l2')
 GDRegressor, results = createResults(regressor, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Gradiente Estocástico")
 
+# Logistic Regression
+
+regressor = LogisticRegression()
+LogRegressor, results = createResults(regressor, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Logística")
+
+# SVM
+
+regressor = LinearSVR()
+SVMRegressor, results = createResults(regressor, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "SVM")
+
 # Saída
 
-answer_y = GDRegressor.predict(unsupervised_test_x.iloc[:,cols_idxs])
+answer_y = LogRegressor.predict(unsupervised_test_x.iloc[:,cols_idxs])
 answer = pd.DataFrame(data={'Id': [i for i in range(0, 2000)], 'preco': answer_y})
 answer.to_csv('results.csv', index= False)
 
