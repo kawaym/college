@@ -7,17 +7,21 @@ import seaborn as sns
 import matplotlib.cm as cm
 
 
-from sklearn import preprocessing
+from sklearn import preprocessing, linear_model
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import BernoulliNB, GaussianNB
+from sklearn.model_selection import train_test_split, cross_val_predict
+from sklearn.naive_bayes import BernoulliNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.ensemble import VotingClassifier
+from sklearn.cluster import KMeans
+from xgboost import XGBClassifier
+from catboost import CatBoostClassifier
 
 # Utilitários
 
@@ -119,34 +123,28 @@ dfCorrelations = pd.DataFrame(data=[x for x in npCorrelations], columns=['id', '
 dfCorrelations = dfCorrelations.sort_values(by=['correlation'])
 
 # Seleciona as features mais performáticas
-print(training_data)
-
 last_y = training_data.iloc[:,-1]
 
-selector = SelectKBest(f_classif, k=5)
+selector = SelectKBest(f_classif, k=7)
 selector.fit(training_data.iloc[:, :-1], training_data.iloc[:,-1])
 cols_idxs = selector.get_support(indices=True)
 training_data = training_data.iloc[:,cols_idxs]
 training_data.insert(len(training_data.columns), 'inadimplente', last_y.values)
 
-print(training_data)
-
-# training_data = SelectKBest(f_classif, k=10).fit_transform(training_data[:, :-1], training_data[:, -1])
-
 # Embaralha os dados para fazer as predições
 
-training, supervised_test = train_test_split(training_data, test_size=0.25)
-training_x = training.iloc[:, :-1].values
-training_y = training.iloc[:, -1].values
-supervised_test_x = supervised_test.iloc[:, :-1].values
-supervised_test_y = supervised_test.iloc[:, -1].values
+training, supervised_test = train_test_split(training_data, test_size=0.001, random_state=31212)
+training_x = training.iloc[:, :-1]
+training_y = training.iloc[:, -1]
+supervised_test_x = supervised_test.iloc[:, :-1]
+supervised_test_y = supervised_test.iloc[:, -1]
 
-unsupervised_test_x = unsupervised_test_data.iloc[:, :].values
+unsupervised_test_x = unsupervised_test_data.iloc[:, :]
 
 # KNN Classifier 
 
 k_number = 1
-recall = 0.0
+accuracy = 0.0
 
 for k in range(1, 31):
 
@@ -156,11 +154,11 @@ for k in range(1, 31):
     
     report = createClassificationReport(target=supervised_test_y, predicted=results, output_dict=True)
     
-    recall_extracted = report['Positive']['recall']
+    accuracy_extracted = report['accuracy']
     
-    if (recall_extracted > recall):
+    if (accuracy_extracted > accuracy):
         k_number = k
-        recall = recall_extracted
+        accuracy = accuracy_extracted
 
 classifier = KNeighborsClassifier(n_neighbors=k_number, weights='uniform')
 KNNClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
@@ -178,44 +176,106 @@ printResults(results, supervised_test_y, "Bernoulli Naive Bayes")
 
 feature_number = 1
 depth_number = 1
-recall = 0.0
+accuracy = 0.0
 
-for k in range(1, 20):
+for k in range(1, 7):
     classifier = DecisionTreeClassifier(criterion='gini', max_features=k, max_depth=7)
+    classifier = classifier.fit(training_x, training_y)
+    _, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+    
+    report = createClassificationReport(target=supervised_test_y, predicted=results, output_dict=True)
+    
+    accuracy_extracted = report['accuracy']
+    
+    if (accuracy_extracted > accuracy):
+        feature_number = k
+        accuracy = accuracy_extracted
 
+for k in range(1, 10):
+    classifier = DecisionTreeClassifier(criterion='gini', max_features=feature_number, max_depth=k)
+    classifier = classifier.fit(training_x, training_y)
+    _, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+    
+    report = createClassificationReport(target=supervised_test_y, predicted=results, output_dict=True)
+    
+    accuracy_extracted = report['accuracy']
+    
+    if (accuracy_extracted > accuracy):
+        depth_number = k
+        accuracy = accuracy_extracted
 
-classifier = DecisionTreeClassifier(criterion='gini', max_features=5, max_depth=7)
+classifier = DecisionTreeClassifier(criterion='gini', max_features=feature_number, max_depth=7)
 DTClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Árvore de Decisão")
 
 # Decision Forest Classifier
 
-classifier = ExtraTreesClassifier(n_estimators=100, max_features=20)
+classifier = ExtraTreesClassifier(n_estimators=100, max_features=feature_number)
 DFClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
-printResults(results, supervised_test_y, "Floresta de Decisão")
+printResults(results, supervised_test_y, "Floresta de Decisão Extra")
+
+# Random Forest Classifier
+
+classifier = RandomForestClassifier(n_estimators=100, criterion='gini', max_features='sqrt', max_depth=depth_number)
+RFClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Floresta de Decisão Aleatória")
+
+# Neural Network Classifier
+
+classifier = MLPClassifier(max_iter=1000)
+NNClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "Resdes Neurais")
 
 # Gradient Boosting Classifier
 
-classifier = GradientBoostingClassifier(learning_rate=0.1, max_features=1, subsample=0.5, n_estimators=100)
+classifier = HistGradientBoostingClassifier(learning_rate=0.3, max_features=1.0)
 GBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Boosting de Gradiente")
 
 # Ada Boosting Classifier
 
-classifier = AdaBoostClassifier(estimator=DecisionTreeClassifier(), learning_rate=0.1, n_estimators=100)
-ABClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+# classifier = AdaBoostClassifier(estimator=DecisionTreeClassifier(), learning_rate=0.1, n_estimators=100)
+# ABClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
-printResults(results, supervised_test_y, "Boosting Ada")
+# printResults(results, supervised_test_y, "Boosting Ada")
+
+# XGBoost Classifier
+
+classifier = XGBClassifier()
+XGClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "XGBoosting")
+
+# CatBoost Classifier
+
+classifier = CatBoostClassifier(logging_level='Silent')
+CBClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
+
+printResults(results, supervised_test_y, "CatBoosting")
 
 # Voting Classifier
 
-estimators = [('knn', KNNClassifier), ('bnb', BNBClassifier), ('dt', DTClassifier), ('gb', GBClassifier), ('ab', ABClassifier)]
+estimators = [('knn', KNNClassifier), 
+              ('bnb', BNBClassifier), 
+              ('dt', DTClassifier), 
+              ('gb', GBClassifier), 
+              # ('df', DFClassifier), 
+              ('rf', RFClassifier), 
+              ('xg', XGClassifier),
+              ('cb', CBClassifier),
+              ('nn', NNClassifier)]
 estimators_weights = [1 for _ in estimators]
 
-classifier = VotingClassifier(estimators=estimators, voting='hard', weights=estimators_weights)
+classifier = VotingClassifier(estimators=estimators, voting='soft', weights=estimators_weights)
 VClassifier, results = createResults(classifier, training_x, training_y, targetX = supervised_test_x)
 
 printResults(results, supervised_test_y, "Votação")
+answer_y = VClassifier.predict(unsupervised_test_x.iloc[:,cols_idxs])
+answer = pd.DataFrame(data={'id_solicitante': [i for i in range(20001, 25001)], 'inadimplente': answer_y})
+answer.to_csv('results.csv', index= False)
+print(answer)
