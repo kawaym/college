@@ -13,14 +13,17 @@ import scipy.stats as stats
 import seaborn as sns
 import matplotlib.cm as cm
 
-from sklearn import preprocessing, linear_model
-from sklearn.preprocessing import OrdinalEncoder
-from sklearn.feature_selection import SelectKBest, f_regression
-from sklearn.metrics import confusion_matrix, r2_score, classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import confusion_matrix, r2_score, classification_report, mean_squared_error
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
 
@@ -59,6 +62,12 @@ def cramers_corrected_stat(confusion):
     kcorr = k - ((k-1)**2)/(n-1)
     return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
 
+def metrics(true, predict):
+    RMSE = np.sqrt(mean_squared_error(true, predict))
+    RMSPE = (np.sqrt(np.mean(np.square((true - predict) / true))))
+    R2   = r2_score(true, predict)
+    return RMSE,RMSPE,R2
+
 # Inicio
 
 if sys.platform.startswith('win32'):
@@ -71,17 +80,14 @@ data = pd.read_csv(path + trainingFile)
 target_col = 'preco'
 target = data.preco
 
-median_by_bairro = data.groupby('bairro')['preco'].median().to_dict()
-sorted_bairros = sorted(median_by_bairro, key=median_by_bairro.get)
-dict_posicoes = {bairro: posicao for posicao, bairro in enumerate(sorted_bairros, start=1)}
-order_bairro = [bairro for bairro, posicao in sorted(dict_posicoes.items(), key=lambda item: item[1])]
-
 # A coluna diferenciais é redundante, pois seus dados já estão codificados nas diversas colunas
 
-data = data.drop([target_col, 'diferenciais'], axis=1)
+data = data.drop(['diferenciais'], axis=1)
 
 test_data = pd.read_csv(path + testFile)
 data_description = data.describe()
+
+test_data = test_data.drop(['diferenciais'], axis=1)
 
 print("Contagem de valores nulos do dataset de treinamento")
 print(data.isna().sum(), '\n\n\n')
@@ -93,15 +99,15 @@ plt.show()
 
 # Não existem valores nulos, portanto todas as features podem continuar no plot
 
-for column in data:
-    print(f'Coluna {column} do dataset, caracteristicas: ')
-    print(f'Tipo: {data[column].dtypes}')
-    if (data[column].dtypes == 'object'):
-        print(f'Valores únicos: {data[column].unique()}')
-        print(f'Contagem por valor: {data[column].value_counts()}')
-    else:
-        print(f'Média: {data[column].mean()}')
-    print('\n\n')
+# for column in data:
+#     print(f'Coluna {column} do dataset, caracteristicas: ')
+#     print(f'Tipo: {data[column].dtypes}')
+#     if (data[column].dtypes == 'object'):
+#         print(f'Valores únicos: {data[column].unique()}')
+#         print(f'Contagem por valor: {data[column].value_counts()}')
+#     else:
+#         print(f'Média: {data[column].mean()}')
+#     print('\n\n')
 
 
 # Ainda temos três features categóricas, podemos explorar mais sobre elas utilizando gráficos de barra
@@ -124,6 +130,16 @@ plt.show()
 
 # One Hot Encoding
 
+bairro_count = data['bairro'].value_counts()
+relevant_bairros = bairro_count[bairro_count >= 100]
+relevant_bairros.index = ('bairro_' + relevant_bairros.index)
+
+for dataset in [data, test_data]:
+    dummies = pd.get_dummies(dataset['bairro'], prefix = 'bairro')
+    dataset[relevant_bairros.index] = dummies[relevant_bairros.index]
+
+pd.concat([data['bairro'], data[relevant_bairros.index]], axis=1).head()
+
 onehot = pd.get_dummies(data, columns = ['tipo', 'tipo_vendedor'], dtype=int)
 data = pd.concat([data, onehot], axis='columns')
 data = data.loc[:,~data.columns.duplicated()].copy()
@@ -139,8 +155,125 @@ encoder = OrdinalEncoder()
 data[['bairro']] = encoder.fit_transform(data[['bairro']])
 test_data[['bairro']] = encoder.fit_transform(test_data[['bairro']])
 
-print(data)
-
-f, ax = plt.subplots(figsize = (30,30))
-sns.heatmap(data.corr(), annot=True, linewidths = .5, fmt = '.1f', ax=ax)
+# Coloca o valor em escala logaritmica
+sns.boxplot(x=target)
 plt.show()
+data[target_col] = np.log(data[target_col])
+target = data[target_col]
+sns.boxplot(x=target)
+plt.show()
+
+correlations = data.corr(method='pearson')
+target = data[target_col]
+# data = data.drop([target_col], axis = 'columns')
+
+# Escala o restantes das features
+
+sns.scatterplot(data, x='area_util', y=target)
+plt.show()
+
+sns.scatterplot(data, x='area_extra', y=target)
+plt.show()
+
+data['area_util'] = np.log(data['area_util'])
+data['area_extra'] = np.log1p(data['area_extra'])
+
+test_data['area_util'] = np.log(test_data['area_util'])
+test_data['area_extra'] = np.log1p(test_data['area_extra'])
+
+sns.scatterplot(data, x='area_util', y=target)
+plt.show()
+
+sns.scatterplot(data, x='area_extra', y=target)
+plt.show()
+
+data['comodos'] = data['quartos'] + data['vagas'] + data['suites']
+data = data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
+test_data['comodos'] = test_data['quartos'] + test_data['vagas'] + test_data['suites']
+test_data = test_data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
+
+sns.scatterplot(data, x='comodos', y=target)
+
+correlations = data.corr()
+print(abs(correlations[target_col]).sort_values(ascending=False))
+
+data = data.drop([target_col, 'tipo_Quitinete'], axis = 'columns')
+
+f, ax = plt.subplots(figsize = (30, 30))
+sns.heatmap(data.corr(), annot=True, fmt='.1f')
+plt.show()
+
+# Selecionar melhores features para treinamento do modelo
+
+chosen_columns = ['comodos', 'area_util', 'vista_mar', 'tipo_Casa', 'bairro_Boa Viagem', 'bairro_Casa Forte']
+data = data[chosen_columns]
+
+# Scaling
+
+scaler = MinMaxScaler()
+scaler.fit(data)
+x = scaler.transform(data)
+
+# Seleção de modelos de regressão
+jobs = -1
+names = ['LinearRegression', 'SGDRegressor', 'RandomForestRegressor', 
+         'ExtraTreesRegressor', 'KNeighborsRegressor',
+         'MLPRegressor', 'GradientBoostingRegressor', 'LinearSVR', 'SVR']
+
+regressors = [
+        LinearRegression(n_jobs=jobs), SGDRegressor(), 
+        RandomForestRegressor(n_jobs=jobs), ExtraTreesRegressor(n_jobs=jobs), KNeighborsRegressor(n_jobs=jobs),
+        MLPRegressor(), GradientBoostingRegressor(), LinearSVR(), SVR()]
+
+RMSE,RMSPE,R2 = [],[],[]
+for regressor in regressors:
+    cv_pred = cross_val_predict(regressor, x, target, cv=4, n_jobs=jobs)
+    
+    RMSE.append(np.sqrt(mean_squared_error(target, cv_pred)))
+    RMSPE.append((np.sqrt(np.mean(np.square((target - cv_pred) / target)))))
+    R2.append(r2_score(target, cv_pred))
+
+scores = pd.DataFrame({
+    'Regressor': names,
+    'RMSE': RMSE,
+    'RMSPE': RMSPE,
+    'R2': R2
+})
+
+scores.sort_values('RMSPE',ascending=True)
+
+print(scores)
+
+chosen_regressor = LinearRegression(n_jobs=jobs)
+
+cv_pred = cross_val_predict(chosen_regressor, x, target, cv=6,n_jobs=jobs)
+
+RMSE,RMSPE,R2 = metrics(target, cv_pred)
+print('RMSE: %.4f / RMSPE: %.4f / R2: %.4f' % (RMSE,RMSPE,R2))
+
+# Scatterplot entre a resposta correta e a resposta do modelo
+plt.scatter(target, cv_pred, alpha = .4)
+plt.plot([target.min(), target.max()], [target.min(), target.max()], 'k--', lw=2)
+plt.xlabel('True Values',fontsize=15)
+plt.ylabel('Predicted',fontsize=15)
+plt.show()
+
+df = pd.DataFrame({
+    'True Values': np.exp(target),
+    'Predicted': np.floor(np.exp(cv_pred)),
+})
+
+test_data = test_data[chosen_columns]
+x_test = scaler.transform(test_data)
+
+chosen_regressor.fit(x, target)
+
+response = np.floor(np.exp(chosen_regressor.predict(x_test)))
+
+answer = pd.DataFrame({
+    'Id': test_data.index,
+    'preco': response
+})
+
+answer.to_csv('results.csv', index= False)
+print(answer.head(9))
