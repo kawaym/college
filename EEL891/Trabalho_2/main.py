@@ -24,6 +24,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
 
@@ -194,6 +195,9 @@ test_data = test_data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
 
 sns.scatterplot(data, x='comodos', y=target)
 
+data['soma_diferenciais'] = data[['churrasqueira', 'estacionamento', 'piscina','playground', 'quadra', 's_festas','s_jogos', 's_ginastica' ,'sauna']].sum(axis=1)
+test_data['soma_diferenciais'] = test_data[['churrasqueira', 'estacionamento', 'piscina','playground', 'quadra', 's_festas','s_jogos', 's_ginastica' ,'sauna']].sum(axis=1)
+
 correlations = data.corr()
 print(abs(correlations[target_col]).sort_values(ascending=False))
 
@@ -205,7 +209,7 @@ plt.show()
 
 # Selecionar melhores features para treinamento do modelo
 
-chosen_columns = ['comodos', 'area_util', 'vista_mar', 'tipo_Casa', 'bairro_Boa Viagem', 'bairro_Casa Forte']
+chosen_columns = ['comodos', 'area_util', 'vista_mar', 'bairro_Boa Viagem', 'bairro_Casa Forte', 'tipo_Casa', 'soma_diferenciais']
 data = data[chosen_columns]
 
 # Scaling
@@ -218,12 +222,12 @@ x = scaler.transform(data)
 jobs = -1
 names = ['LinearRegression', 'SGDRegressor', 'RandomForestRegressor', 
          'ExtraTreesRegressor', 'KNeighborsRegressor',
-         'MLPRegressor', 'GradientBoostingRegressor', 'LinearSVR', 'SVR']
+         'MLPRegressor', 'GradientBoostingRegressor', 'LinearSVR', 'SVR', 'AdaBoostRegressor']
 
 regressors = [
         LinearRegression(n_jobs=jobs), SGDRegressor(), 
         RandomForestRegressor(n_jobs=jobs), ExtraTreesRegressor(n_jobs=jobs), KNeighborsRegressor(n_jobs=jobs),
-        MLPRegressor(), GradientBoostingRegressor(), LinearSVR(), SVR()]
+        MLPRegressor(), GradientBoostingRegressor(learning_rate=0.1), LinearSVR(), SVR(), AdaBoostRegressor()]
 
 RMSE,RMSPE,R2 = [],[],[]
 for regressor in regressors:
@@ -244,7 +248,7 @@ scores.sort_values('RMSPE',ascending=True)
 
 print(scores)
 
-chosen_regressor = LinearRegression(n_jobs=jobs)
+chosen_regressor = GradientBoostingRegressor(learning_rate=0.1)
 
 cv_pred = cross_val_predict(chosen_regressor, x, target, cv=6,n_jobs=jobs)
 
