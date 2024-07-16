@@ -14,11 +14,10 @@ import seaborn as sns
 import matplotlib.cm as cm
 
 from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
-from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import cross_val_predict, GridSearchCV
 from sklearn.metrics import confusion_matrix, r2_score, classification_report, mean_squared_error
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDRegressor
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.neighbors import KNeighborsRegressor
@@ -27,6 +26,8 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
+from xgboost import XGBRegressor
+from catboost import CatBoostRegressor
 
 # Utilitários
 
@@ -77,6 +78,8 @@ if sys.platform.startswith('win32'):
 trainingFile = "/data/conjunto_de_treinamento.csv"
 testFile = "/data/conjunto_de_teste.csv"
 
+figures = path + '/figures'
+
 data = pd.read_csv(path + trainingFile)
 target_col = 'preco'
 target = data.preco
@@ -96,6 +99,7 @@ print(data.isna().sum(), '\n\n\n')
 # Box plot para checagem de outliers
 
 sns.boxplot(data, y=target, log_scale=True)
+plt.savefig(f'{figures}/outliers_boxplot.png')
 plt.show()
 
 # Não existem valores nulos, portanto todas as features podem continuar no plot
@@ -114,19 +118,24 @@ plt.show()
 # Ainda temos três features categóricas, podemos explorar mais sobre elas utilizando gráficos de barra
 
 sns.histplot(data=data, x='tipo')
+plt.savefig(f'{figures}/tipo_histplot.png')
 plt.show()
 
 sns.barplot(data=data, x='tipo', y=target)
+plt.savefig(f'{figures}/tipo_barplot.png')
 plt.show()
 
 sns.histplot(data=data, x='tipo_vendedor')
+plt.savefig(f'{figures}/tipo_vendedor_histplot.png')
 plt.show()
 
 sns.barplot(data=data, x='tipo_vendedor', y=target)
+plt.savefig(f'{figures}/tipo_vendedor_barplot.png')
 plt.show()
 
 f, ax = plt.subplots(figsize = (20, 30))
 sns.barplot(data=data, x=target, y='bairro')
+plt.savefig(f'{figures}/bairro_preco_barplot.png')
 plt.show()
 
 # One Hot Encoding
@@ -162,6 +171,7 @@ plt.show()
 data[target_col] = np.log(data[target_col])
 target = data[target_col]
 sns.boxplot(x=target)
+plt.savefig(f'{figures}/preco_log_barplot.png')
 plt.show()
 
 correlations = data.corr(method='pearson')
@@ -171,9 +181,12 @@ target = data[target_col]
 # Escala o restantes das features
 
 sns.scatterplot(data, x='area_util', y=target)
+plt.savefig(f'{figures}/area_util_scatterplot.png')
 plt.show()
 
 sns.scatterplot(data, x='area_extra', y=target)
+plt.savefig(f'{figures}/area_extra_scatterplot.png')
+
 plt.show()
 
 data['area_util'] = np.log(data['area_util'])
@@ -183,17 +196,29 @@ test_data['area_util'] = np.log(test_data['area_util'])
 test_data['area_extra'] = np.log1p(test_data['area_extra'])
 
 sns.scatterplot(data, x='area_util', y=target)
+plt.savefig(f'{figures}/area_util_log_scatterplot.png')
 plt.show()
 
 sns.scatterplot(data, x='area_extra', y=target)
+plt.savefig(f'{figures}/area_extra_log_scatterplot.png')
 plt.show()
 
-data['comodos'] = data['quartos'] + data['vagas'] + data['suites']
-data = data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
-test_data['comodos'] = test_data['quartos'] + test_data['vagas'] + test_data['suites']
-test_data = test_data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
+data['comodos'] = data['quartos'] + data['vagas'] 
+# + data['suites']
+# data = data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
+test_data['comodos'] = test_data['quartos'] + test_data['vagas'] 
+# + test_data['suites']
+# test_data = test_data.drop(['quartos', 'vagas', 'suites'], axis = 'columns')
 
 sns.scatterplot(data, x='comodos', y=target)
+plt.savefig(f'{figures}/comodos_scatterplot.png')
+plt.show()
+
+quartos_suites = data['quartos'] - data['suites']
+
+for dataset in [data, test_data]:
+    quartos_suites = dataset['quartos'] - dataset['suites']
+    dataset['razao_quarto_vaga'] = np.where(quartos_suites == 0, 0, dataset['vagas'] / quartos_suites)
 
 data['soma_diferenciais'] = data[['churrasqueira', 'estacionamento', 'piscina','playground', 'quadra', 's_festas','s_jogos', 's_ginastica' ,'sauna']].sum(axis=1)
 test_data['soma_diferenciais'] = test_data[['churrasqueira', 'estacionamento', 'piscina','playground', 'quadra', 's_festas','s_jogos', 's_ginastica' ,'sauna']].sum(axis=1)
@@ -203,14 +228,32 @@ print(abs(correlations[target_col]).sort_values(ascending=False))
 
 data = data.drop([target_col, 'tipo_Quitinete'], axis = 'columns')
 
-f, ax = plt.subplots(figsize = (30, 30))
-sns.heatmap(data.corr(), annot=True, fmt='.1f')
-plt.show()
+# f, ax = plt.subplots(figsize = (30, 30))
+# sns.heatmap(data.corr(), annot=True, fmt='.1f')
+# plt.savefig(f'{figures}/correlations_heatmap.png')
+# plt.show()
 
 # Selecionar melhores features para treinamento do modelo
 
-chosen_columns = ['comodos', 'area_util', 'vista_mar', 'bairro_Boa Viagem', 'bairro_Casa Forte', 'tipo_Casa', 'soma_diferenciais']
+chosen_columns = [
+                  'comodos', 
+                  'suites', 
+                  'area_util', 
+                  'vista_mar', 
+                  'bairro_Boa Viagem', 
+                  'bairro_Casa Forte', 
+                  'tipo_Casa', 
+                  'soma_diferenciais', 
+                  'razao_quarto_vaga',
+                  # 'bairro' Causa overfitting
+                  ]
 data = data[chosen_columns]
+
+f, ax = plt.subplots(figsize = (30, 30))
+sns.heatmap(data.corr(), annot=True, fmt='.1f')
+plt.savefig(f'{figures}/correlations_heatmap.png')
+plt.show()
+
 
 # Scaling
 
@@ -222,12 +265,17 @@ x = scaler.transform(data)
 jobs = -1
 names = ['LinearRegression', 'SGDRegressor', 'RandomForestRegressor', 
          'ExtraTreesRegressor', 'KNeighborsRegressor',
-         'MLPRegressor', 'GradientBoostingRegressor', 'LinearSVR', 'SVR', 'AdaBoostRegressor']
+         'MLPRegressor', 'GradientBoostingRegressor', 'LinearSVR', 'SVR', 'AdaBoostRegressor', 'XGBRegressor', 
+         # 'CatBoostRegressor'
+         ]
 
 regressors = [
         LinearRegression(n_jobs=jobs), SGDRegressor(), 
         RandomForestRegressor(n_jobs=jobs), ExtraTreesRegressor(n_jobs=jobs), KNeighborsRegressor(n_jobs=jobs),
-        MLPRegressor(), GradientBoostingRegressor(learning_rate=0.1), LinearSVR(), SVR(), AdaBoostRegressor()]
+        MLPRegressor(), GradientBoostingRegressor(learning_rate=0.1, loss='huber', max_depth=6), LinearSVR(), SVR(), AdaBoostRegressor(),
+        XGBRegressor(), 
+        # CatBoostRegressor()
+        ]
 
 RMSE,RMSPE,R2 = [],[],[]
 for regressor in regressors:
@@ -248,7 +296,19 @@ scores.sort_values('RMSPE',ascending=True)
 
 print(scores)
 
-chosen_regressor = GradientBoostingRegressor(learning_rate=0.1)
+parameters = {
+    # 'loss': ['huber', 'squared_error'],
+    # 'learning_rate': [x / 10.0 for x in range(1, 10, 1)],
+    # 'criterion': ['friedman_mse', 'squared_error'],
+    # 'max_depth': list(range(1, 9)),
+    # 'max_features': ['sqrt', 'log2']
+              }
+grid = GridSearchCV(GradientBoostingRegressor(learning_rate=0.2, loss='huber', max_depth=5, max_features='log2'), 
+                    parameters, cv=10)
+grid.fit(x, target)
+print(grid.best_params_)
+
+chosen_regressor = GradientBoostingRegressor(learning_rate=0.2, loss='huber', max_depth=5, max_features='log2')
 
 cv_pred = cross_val_predict(chosen_regressor, x, target, cv=6,n_jobs=jobs)
 
@@ -258,8 +318,9 @@ print('RMSE: %.4f / RMSPE: %.4f / R2: %.4f' % (RMSE,RMSPE,R2))
 # Scatterplot entre a resposta correta e a resposta do modelo
 plt.scatter(target, cv_pred, alpha = .4)
 plt.plot([target.min(), target.max()], [target.min(), target.max()], 'k--', lw=2)
-plt.xlabel('True Values',fontsize=15)
-plt.ylabel('Predicted',fontsize=15)
+plt.xlabel('Real',fontsize=15)
+plt.ylabel('Predito',fontsize=15)
+plt.savefig(f'{figures}/real_vs_predito.png')
 plt.show()
 
 df = pd.DataFrame({
