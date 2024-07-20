@@ -248,11 +248,12 @@ chosen_columns = [
                   # 'bairro' Causa overfitting
                   ]
 data = data[chosen_columns]
-
+sns.set(font_scale=2.0)
 f, ax = plt.subplots(figsize = (30, 30))
 sns.heatmap(data.corr(), annot=True, fmt='.1f')
 plt.savefig(f'{figures}/correlations_heatmap.png')
 plt.show()
+sns.set(font_scale=1.0)
 
 
 # Scaling
