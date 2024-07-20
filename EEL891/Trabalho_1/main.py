@@ -133,7 +133,7 @@ training_data.insert(len(training_data.columns), 'inadimplente', last_y.values)
 
 # Embaralha os dados para fazer as predições
 
-training, supervised_test = train_test_split(training_data, test_size=0.001, random_state=31212)
+training, supervised_test = train_test_split(training_data, test_size=0.3, random_state=31212)
 training_x = training.iloc[:, :-1]
 training_y = training.iloc[:, -1]
 supervised_test_x = supervised_test.iloc[:, :-1]
