@@ -23,11 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <omp.h>
 
 static int N;
 static int MAX_ITERATIONS;
 static int SEED;
 static double CONVERGENCE_THRESHOLD;
+static int THREADS;
 
 #define SEPARATOR "------------------------------------\n"
 
@@ -41,46 +43,46 @@ void parse_arguments(int argc, char *argv[]);
 // Returns the number of iterations performed
 int run(double *A, double *b, double *x, double *xtmp)
 {
-  int itr;
-  int row, col;
-  double dot;
-  double diff;
-  double sqdiff;
-  double *ptrtmp;
+    omp_set_num_threads(THREADS);
+    int itr;
+    double dot;
+    double diff;
+    double sqdiff;
+    double *ptrtmp;
 
-  // Loop until converged or maximum iterations reached
-  itr = 0;
-  do
-  {
-    // Perfom Jacobi iteration
-    for (row = 0; row < N; row++)
-    {
-      dot = 0.0;
-      for (col = 0; col < N; col++)
-      {
-        if (row != col)
-          dot += A[row + col*N] * x[col];
-      }
-      xtmp[row] = (b[row] - dot) / A[row + row*N];
-    }
+    // Loop até convergência ou atingir o máximo de iterações
+    itr = 0;
+    do {
+        sqdiff = 0.0;
+        // Paralelização do loop externo com OpenMP
+        #pragma omp parallel for private(dot, diff) shared(A, b, x, xtmp, sqdiff)
+        for (int row = 0; row < N; row++) {
+            dot = 0.0;
+            for (int col = 0; col < N; col++) {
+                if (row != col) {
+                    dot += A[row + col * N] * x[col];
+                }
+            }
+            xtmp[row] = (b[row] - dot) / A[row + row * N];
 
-    // Swap pointers
-    ptrtmp = x;
-    x      = xtmp;
-    xtmp   = ptrtmp;
+            // Cálculo do sqdiff para verificação de convergência
+            diff = xtmp[row] - x[row];
+            #pragma omp atomic
+            sqdiff += diff * diff;
 
-    // Check for convergence
-    sqdiff = 0.0;
-    for (row = 0; row < N; row++)
-    {
-      diff    = xtmp[row] - x[row];
-      sqdiff += diff * diff;
-    }
+            // Atualização de x para a próxima iteração
+            x[row] = xtmp[row];
+        }
+	
+	ptrtmp = x;
+    	x      = xtmp;
+    	xtmp   = ptrtmp;
 
-    itr++;
-  } while ((itr < MAX_ITERATIONS) && (sqrt(sqdiff) > CONVERGENCE_THRESHOLD));
 
-  return itr;
+        itr++;
+    } while ((itr < MAX_ITERATIONS) && (sqdiff > CONVERGENCE_THRESHOLD * CONVERGENCE_THRESHOLD));
+
+    return itr;
 }
 
 int main(int argc, char *argv[])
@@ -179,8 +181,9 @@ void parse_arguments(int argc, char *argv[])
   // Set default values
   N = 1000;
   MAX_ITERATIONS = 20000;
-  CONVERGENCE_THRESHOLD = 0.0001;
+  CONVERGENCE_THRESHOLD = 1e-8;
   SEED = 0;
+  THREADS = 1;
 
   for (int i = 1; i < argc; i++)
   {
@@ -216,6 +219,14 @@ void parse_arguments(int argc, char *argv[])
         exit(1);
       }
     }
+    else if (!strcmp(argv[i], "-t"))
+    {
+      if (++i >= argc || (THREADS = parse_int(argv[i])) < 0)
+      {
+      	printf("Invalid number of threads\n");
+      	exit(1);
+      }
+    }
     else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
     {
       printf("\n");
@@ -226,6 +237,7 @@ void parse_arguments(int argc, char *argv[])
       printf("  -i  --iterations   I     Set maximum number of iterations\n");
       printf("  -n  --norder       N     Set maxtrix order\n");
       printf("  -s  --seed         S     Set random number seed\n");
+      printf("  -t  --threads      T     Set threads usage\n");
       printf("\n");
       exit(0);
     }
