@@ -1,6 +1,6 @@
 CC = cc
-CFLAGS = -std=c99 -Wall
+CFLAGS = -std=c99 -Wall -fopenmp
 LDFLAGS = -lm
 
-jacobi: jacobi_col.c
+jacobi: jacobi.c
 	$(CC) $(CFLAGS) -o jacobi jacobi.c $(LDFLAGS)
