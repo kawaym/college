@@ -73,59 +73,120 @@
 \end{enumerate}
 \subsection{Objetos são atores}
 \begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
-\node[main] (1) {1.a};
-\node[main] (2) [left of=1] {1.b};
-\node[main] (3) [right of=1] {1.c};
-\node[main] (4) [below right of=1] {1.d};
-\node[main] (5) [below right of=2] {1.e};
-\node[main] (6) [below right of=3] {1.f};
-\draw (1) to node[midway, above] {2.b} (2);
-\draw (1) to node[midway, above] {2.a} (3);
-\draw (1) to node[midway, above, sloped] {2.b} (4);
-\draw (1) to node[midway, above, sloped] {2.b} (5);
-\draw (1) to node[midway, above, sloped] {2.a} (6);
-\draw (2) to [out=270, in=225, looseness=1.5] node[midway, below, sloped] {2.b} (4);
-\draw (2) to node[midway, below, sloped] {2.b} (5);
-\draw (3) to node[midway, above, sloped] {2.a} (6);
-\draw (4) to node[midway, below, sloped] {2.b} (5);
+    \node[main] (1) {1.a};
+    \node[main] (2) [left of=1] {1.b};
+    \node[main] (3) [right of=1] {1.c};
+    \node[main] (4) [below right of=1] {1.d};
+    \node[main] (5) [below right of=2] {1.e};
+    \node[main] (6) [below right of=3] {1.f};
+    \draw (1) to node[midway, above] {2.b} (2);
+    \draw (1) to node[midway, above] {2.a} (3);
+    \draw (1) to node[midway, above, sloped] {2.b} (4);
+    \draw (1) to node[midway, above, sloped] {2.b} (5);
+    \draw (1) to node[midway, above, sloped] {2.a} (6);
+    \draw (2) to [out=270, in=225, looseness=1.5] node[midway, below, sloped] {2.b} (4);
+    \draw (2) to node[midway, below, sloped] {2.b} (5);
+    \draw (3) to node[midway, above, sloped] {2.a} (6);
+    \draw (4) to node[midway, below, sloped] {2.b} (5);
 \end{tikzpicture}
 \subsection{Objetos são filmes}
 \begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
-\node[main] (1) {2.a};
-\node[main] (2) [right of=1] {2.b};
-\node[main] (3) [right of=2] {2.c};
-\node[main] (4) [below right of=1] {2.d};
-\node[main] (5) [below right of=2] {2.e};
-\node[main] (6) [below right of=3] {2.f};
-\draw (2) to (3);
-\draw (2) to (4);
-\draw (3) to (4);
+    \node[main] (1) {2.a};
+    \node[main] (2) [right of=1] {2.b};
+    \node[main] (3) [right of=2] {2.c};
+    \node[main] (4) [below right of=1] {2.d};
+    \node[main] (5) [below right of=2] {2.e};
+    \node[main] (6) [below right of=3] {2.f};
+    \draw (2) to (3);
+    \draw (2) to (4);
+    \draw (3) to (4);
 \end{tikzpicture}
 \subsection{Objetos são filmes e atores}
 \begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
-\node[main](1) {1.a};
-\node[main](2) [right of=1] {1.b};
-\node[main](3) [right of=2] {1.c};
-\node[main](4) [below left of=1] {2.a};
-\node[main](5) [right of=4] {2.b};
-\node[main](6) [right of=5] {2.c};
-\node[main](7) [below right of=4] {2.d};
-\node[main](8) [right of=7] {2.e};
-\node[main](9) [right of=8] {2.f};
-\node[main](10) [below left of=7] {1.d};
-\node[main](11) [right of=10] {1.e};
-\node[main](12) [right of=11] {1.f};
-\draw (1) to (4);
-\draw (1) to (5);
-\draw (2) to (5);
-\draw (2) to (6);
-\draw (2) to [out=315, in=90](9);
-\draw (3) to [out=150, in=90](4);
-\draw (10) to [out=90, in=180](5);
-\draw (10) to [out=300, in=0, looseness=1.2](6);
-\draw (11) to (5);
-\draw (12) to [out=180, in=270, looseness=0.5](4);
-\draw (12) to (8);
+    \node[main](1) {1.a};
+    \node[main](2) [right of=1] {1.b};
+    \node[main](3) [right of=2] {1.c};
+    \node[main](4) [below left of=1] {2.a};
+    \node[main](5) [right of=4] {2.b};
+    \node[main](6) [right of=5] {2.c};
+    \node[main](7) [below right of=4] {2.d};
+    \node[main](8) [right of=7] {2.e};
+    \node[main](9) [right of=8] {2.f};
+    \node[main](10) [below left of=7] {1.d};
+    \node[main](11) [right of=10] {1.e};
+    \node[main](12) [right of=11] {1.f};
+    \draw (1) to (4);
+    \draw (1) to (5);
+    \draw (2) to (5);
+    \draw (2) to (6);
+    \draw (2) to [out=315, in=90](9);
+    \draw (3) to [out=150, in=90](4);
+    \draw (10) to [out=90, in=180](5);
+    \draw (10) to [out=300, in=0, looseness=1.2](6);
+    \draw (11) to (5);
+    \draw (12) to [out=180, in=270, looseness=0.5](4);
+    \draw (12) to (8);
 \end{tikzpicture}
-\end{document}
 
+\newpage
+\section{Questão 2}
+\subsection{Maior Clique do Grafo}
+\subsubsection{Grafo 1.1}
+\begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
+    \node[main](1) {1.b};
+    \node[main](2) [right of=1]{1.a};
+    \node[main](3) [below right of=1] {1.e};
+    \node[main](4) [right of=3]{1.d};
+    \draw (1) to (2);
+    \draw (1) to (3);
+    \draw (1) to (4);
+    \draw (2) to (3);
+    \draw (2) to (4);
+    \draw (3) to (4);
+\end{tikzpicture}
+\subsubsection{Grafo 1.2}
+\begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
+    \node[main](1) {2.b};
+    \node[main](2) [right of=1]{2.c};
+    \node[main](3) [below of=2]{2.d};
+    \draw (1) to (2);
+    \draw (2) to (3);
+    \draw (1) to (3);
+\end{tikzpicture}
+\subsubsection{Grafo 1.3}
+Esse grafo possui apenas cliques triviais de apenas uma aresta, podendo ser exemplificado por:
+\smallbreak
+\begin{tikzpicture}[thick, main/.style = {draw, circle}, node distance = 30mm]
+    \node[main](1) {1.a};
+    \node[main](2) [right of=1]{2.a};
+    \draw (1) to (2);
+\end{tikzpicture}
+\subsection{Diâmetro do Grafo}
+\subsubsection{Grafo 1.1}
+O diâmetro desse grafo é 2.
+\subsubsection{Grafo 1.2}
+O diâmetro desse grafo é 1.
+\subsubsection{Grafo 1.3}
+O diâmetro desse grafo é 5.
+\subsection{Existência de Ciclo Hamiltoniano}
+\subsubsection{Grafo 1.1}
+Não existe um ciclo Hamiltoniano nesse grafo, verificado por inspeção visual.
+\subsubsection{Grafo 1.2}
+Não existe um ciclo Hamiltoniano nesse grafo, verificado por inspeção visual.
+\subsubsection{Grafo 1.3}
+Não existe um ciclo Hamiltoniano nesse grafo, verificado por inspeção visual.
+\subsection{Existência de Ciclo Euleriano}
+\subsubsection{Grafo 1.1}
+Não existe um ciclo Euleriano nesse grafo, verificado por inspeção visual.
+\subsubsection{Grafo 1.2}
+Não existe um ciclo Euleriano nesse grafo, verificado por inspeção visual.
+\subsubsection{Grafo 1.3}
+Não existe um ciclo Euleriano nesse grafo, verificado por inspeção visual.
+\subsection{Bipartição do Grafo}
+\subsubsection{Grafo 1.1}
+Não existem conjuntos {$V_1$} e {$V_2$} tais que a intersecção entre eles seja o conjunto vazio.
+\subsubsection{Grafo 1.2}
+Não existem conjuntos {$V_1$} e {$V_2$} tais que a intersecção entre eles seja o conjunto vazio.
+\subsubsection{Grafo 1.3}
+Por definição este grafo é bipartido, já que relaciona dois tipos diferentes de dados (atores e filmes).
+\end{document}
