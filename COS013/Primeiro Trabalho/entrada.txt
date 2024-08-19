@@ -1,0 +1,21 @@
+oie
+3.14E+3
+3321321321321
+if ( a5 > $bba + _1 )
+a$ $$ $ $_$
+if( $_a >= 1e-5 )
+a $_ $ = "Um texto";
+$ = "Uma String" "outra\t string" "d'ouro";
+a = "Um \"texto" 'd\'agua' 'd''ouro " ""';
+a = "Um ""texto \o/ //\\/* */" ;
+`  string ' "/*" ' 
+*/ //
+`;
+`Hora atual: $ !`
+`Hora atual: ${agora} horas!`
+`Hora atual: ${$agora} horas n'agua!`
+a = 2; /* Um comentario */ 
+a = 2; /* Um comentario */ // outro */ 
+/* Texto 
++ / * a
+*/
