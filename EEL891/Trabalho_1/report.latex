@@ -1,0 +1,153 @@
+\documentclass[a4paper]{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{listings}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{wrapfig}
+\usepackage{minted}
+\usepackage{makeidx}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{amsmath}
+
+\usepackage{subfig}
+\usepackage{float}
+
+\pagenumbering{gobble}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+ 
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{}
+\lhead{\textbf{Introdução a Aprendizado de Máquina}}
+\cfoot{\thepage}
+
+\begin{document}
+\begin{titlepage}
+   \begin{center}
+        \vspace{1cm}   
+        \LARGE{EEL891 - Introdução a Aprendizado de Máquina \\ 2024/1}
+
+        \vspace{1.5cm}
+        \huge{Competição 1}\\
+        \vspace{1cm}
+     
+        \begin{center}
+           \includegraphics[width=0.7\textwidth]{Images/minerva.png}
+        \end{center}
+       
+        \vspace{1.5cm}
+        %\vspace{2cm}
+
+        \large{
+        \item Kaway Henrique da Rocha Marinho - DRE 119056239
+        \begin{itemize}
+        \item \texttt{kawayrmarinho@poli.ufrj.br}
+        \end{itemize}
+        }
+        
+        \vspace{0.5cm}
+        \vfill
+        
+        \vspace{2.3cm}
+        Rio de Janeiro - RJ\\
+        20 de Julho de 2024 (2024.1)
+        
+        
+   \end{center}
+\end{titlepage}
+
+\newpage
+
+
+
+
+\section{Introdução}
+
+O objetivo desse relatório é explorar sobre o código para a competição 1 estabelecido nesse período na disciplina de Introdução a Aprendizado de Máquina. Neste primeiro trabalho, são abordados diferentes tipos de classificadores, sendo a maioria disponibilizado pela biblioteca scikit-learn e alguns a mais.
+
+\section{Preparação dos dados}
+
+A preparação dos dados para esse problema foi feita retirando as colunas ditas como problemáticas, conforme o dicionário de dados e a codificação dos dados categóricos. Optei por uma codificação ordinal ao invés de one-hot encoding, para tentar não aumentar de maneira significativa a dimensionalidade do problema.
+
+\begin{verbatim}
+    encoder = preprocessing.OrdinalEncoder(encoded_missing_value=-1)
+    scaler = preprocessing.StandardScaler()
+\end{verbatim}
+
+\section{Seleção de Atributos}
+
+Os atributos foram selecionados conforme uma função disponibilizada pela biblioteca scikit-learn chamada SelectKBest, a ideia da função é verificar as correlações de todas as colunas com a coluna alvo, no caso a coluna inadimplente, e selecionar as n melhores correlações.
+
+\begin{verbatim}
+    selector = SelectKBest(f_classif, k=7)
+    selector.fit(training_data.iloc[:, :-1], training_data.iloc[:,-1])
+\end{verbatim}
+
+\section{Modelos utilizados}
+
+Os modelos utilizados e discutidos foram alguns dos usados em sala de aula bem como a adição dos modelos Xgboost e Catboost, fornecidos por terceiros. Ao fim, foi selecionado uma mistura de todos os modelos através do classificador por votação, que gerou um resultado mais satisfatório.
+
+Lista de modelos:
+
+\begin{verbatim}
+    KNeighborsClassifier
+    BernoulliNB
+    DecisionTreeClassifier
+    ExtraTreesClassifier
+    RandomForestClassifier
+    MLPCLassifier
+    HistGradientBoostingClassifier
+    XGBClassifier
+    CatBoostClassifier
+\end{verbatim}
+
+\section{Validação}
+
+Para esse primeiro trabalho, fiz aprendizado supervisionado básico, separando os dados de treinamento em dois para tentar estudar a performance fornecida pelos modelos. 
+
+\begin{verbatim}
+    training, supervised_test = train_test_split(training_data, test_size=0.3, 
+      random_state=31212)
+    training_x = training.iloc[:, :-1]
+    training_y = training.iloc[:, -1]
+    supervised_test_x = supervised_test.iloc[:, :-1]
+    supervised_test_y = supervised_test.iloc[:, -1]
+\end{verbatim}
+
+\section{Resultados}
+
+Ao fim do treinamento, optei pelo classificador de votação, que toma uma média simples entre todos os modelos criados no script e realiza a classificação de cada entrada.
+
+\begin{verbatim}
+    Classificador Votação (Dentro da Amostra)
+
+              precision    recall  f1-score   support
+
+    Negative       0.60      0.51      0.55      3036
+    Positive       0.56      0.65      0.60      2964
+
+    accuracy                           0.58      6000
+   macro avg       0.58      0.58      0.58      6000
+weighted avg       0.58      0.58      0.58      6000
+\end{verbatim}
+
+\section{Conclusões}
+
+A competição permitiu uma abordagem mais hands-on do que foi passado em sala de aula, além de permitir uma visualização melhor dos dados aplicados.
+
+\section{Bibliografia}
+
+https://medium.com/@ktoprakucar/how-to-calculate-the-correlation-between-categorical-and-continuous-values-dcb7abf79406
+
+An Introduction to Variable and Feature Selection - Journal of Machine Learning Research 3 (2003) 1157-1182
+
+https://scikit-learn.org/stable/modules/compose.html
+
+https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
+
+\end{document}
+
