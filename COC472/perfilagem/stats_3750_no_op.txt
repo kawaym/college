@@ -1,0 +1,10 @@
+------------------------------------
+Matrix size:            3750x3750
+Maximum iterations:     20000
+Convergence threshold:  0.000100
+------------------------------------
+Solution error = 0.187398
+Iterations     = 9734
+Total runtime  = 763.658062 seconds
+Solver runtime = 763.348269 seconds
+------------------------------------
