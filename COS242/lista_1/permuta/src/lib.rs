@@ -20,7 +20,7 @@ fn swap(left: usize, right: usize, list: &mut Vec<Option<i32>>) {
 
 pub fn permute(left: usize, right: usize, list: &mut Vec<Option<i32>>) {
     if left == right {
-        print_list(list);
+        // print_list(list);
     } else {
         for i in left..right + 1 {
             swap(left, i, list);
