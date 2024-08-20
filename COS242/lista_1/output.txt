@@ -1,0 +1,6 @@
+thread 'main' panicked at src/main.rs:7:40:
+called `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Command exited with non-zero status 101
+0.00user 0.00system 0:00.00elapsed 87%CPU (0avgtext+0avgdata 1792maxresident)k
+0inputs+8outputs (0major+85minor)pagefaults 0swaps
