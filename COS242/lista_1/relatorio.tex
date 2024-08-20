@@ -1,8 +1,10 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{listings}
+\usepackage{pkgs/listings-rust}
 \usepackage{float}
 \usepackage{tikz}
+\usepackage{hyperref}
 \lstset{
     inputencoding = utf8,  % Input encoding
     extendedchars = true,  % Extended ASCII
@@ -217,8 +219,8 @@ Marinho, K. {$\leftarrow$} Figueiredo, Daniel Ratton {$\leftarrow$} Reed, Bruce 
     \item https://x.com/MIT
     \item http://socialmediahub.mit.edu/
     \item https://web.mit.edu/
-    O comprimento total do caminho é 8.
 \end{enumerate}
+    O comprimento total do caminho é 8.
 \subsection{Caminho alternativo entre UFRJ e MIT}
 \begin{enumerate}
     \item https://ufrj.br/
@@ -232,8 +234,71 @@ Marinho, K. {$\leftarrow$} Figueiredo, Daniel Ratton {$\leftarrow$} Reed, Bruce 
     \item https://openlearning.mit.edu/accessibility
     \item https://accessibility.mit.edu/
     \item https://web.mit.edu/
+\end{enumerate}
     O comprimento total do caminho é 10.
-\subsection{Como encontrar o menor cmainoh possível}
+\subsection{Como encontrar o menor caminho possível}
 Uma forma simples que acredito cumprir o trabalho, apesar de ser extrememante não eficiente, é "inundar" todos os possíveis caminho entre dois vértices presentes no grafo e após isso selecionar o que possuir menor valor. Essa abordagem no entanto poderia ser muito demorada, e sem uma inteligência maior para o algoritmo ele acabaria repetindo muitos caminhos ou não chegando a lugar algum em algumas ocasiões
+\section{Questão 6}
+\begin{enumerate}
+    \item O programa imprimirá n! permutações.
+    \item Segundo a \href{https://pt.wikipedia.org/wiki/Universo_observ%C3%A1vel}{Wikipedia} a estimativa de átomos no universo é de {$10^{80}$}. Conforme o item 6.1, podemos testar valores utilizando uma \href{https://www.wolframalpha.com/input?i=59%21}{calculadora online}, onde chegamos a uma entrada do valor 59.
+    \item
+    Os dados gerados conforme a tabela 1 geram o seguinte gráfico:
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\textwidth]{imgs/graph.png}
+        \caption{Gŕafico de performance do programa}
+        \label{fig:enter-label}
+    \end{figure}
+    É possível notar um "spike" no tempo levado para a computação quando ocorre o print da permutação, isso reflete não somente a natureza fatorial do problema mas também os custos de entregar aquela saída para o STDOUT. É possível notar que isso é um fator pois os valores para quando não ocorre o print da permutação são consideravelmente menores, o que me permitiu também computar mais uma iteração (13!).
+    \begin{table}[H]
+        \centering
+        \begin{tabular}{c|c|c|c|c}
+        size & user   & system & total   & prints \\
+        2    & 0      & 0      & 0       & 1      \\
+        4    & 0      & 0      & 0       & 1      \\
+        6    & 0      & 0      & 0.01    & 1      \\
+        8    & 0.03   & 0.05   & 0.1     & 1      \\
+        10   & 3.27   & 3.93   & 10.25   & 1      \\
+        12   & 474.51 & 527.24 & 1489.81 & 1      \\ \hline
+        2    & 0      & 0      & 0       & 0      \\
+        4    & 0      & 0      & 0       & 0      \\
+        6    & 0      & 0      & 0       & 0      \\
+        8    & 0      & 0      & 0       & 0      \\
+        10   & 0.04   & 0      & 0.04    & 0      \\
+        12   & 3.12   & 0      & 3.13    & 0      \\
+        13   & 40.68  & 0      & 40.69   & 0     
+        \end{tabular}
+        \caption{Valores gerados pelo programa}
+    \end{table}
+    Código utilizado para a computação das permutações:
+
+    \begin{lstlisting}[language=Rust]
+pub fn permute(left: usize, right: usize, 
+list: &mut Vec<Option<i32>>) {
+    if left == right {
+        print_list(list);
+    } else {
+        for i in left..right + 1 {
+            swap(left, i, list);
+            permute(left + 1, right, list);
+            swap(left, i, list);
+        }
+    }
+}
+    \end{lstlisting}
+    Sendo a função swap definida como:
+    \begin{lstlisting}[language=Rust]
+fn swap(left: usize, right: usize, 
+list: &mut Vec<Option<i32>>) {
+    if left == right {
+        return;
+    }
+    let temp1 = list[left].take().unwrap();
+    let temp2 = list[right].take().unwrap();
+    list[left] = Some(temp2);
+    list[right] = Some(temp1);
+}
+    \end{lstlisting}
 \end{enumerate}
 \end{document}

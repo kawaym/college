@@ -1,12 +1,13 @@
-import subprocess
-import os
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-PATH = "permuta/target/release/"
-PROGRAM = "permuta"
-PROGRAM_NAME = os.path.join(PATH, PROGRAM)
-RUN_COMMAND = ["time", PROGRAM_NAME, "grep total"]
-OUTPUT_PATH = "./output.txt"
+df = pd.read_csv("results.csv", delimiter=",")
+df[['user', 'system', 'total']] = df[['user', 'system', 'total']].apply(pd.to_numeric)
 
-for size in range(0, 8, 2):
-    with open(OUTPUT_PATH, "w") as f:
-        subprocess.run(RUN_COMMAND + [f"{size}"], stdout=f, stderr=subprocess.STDOUT)
+sns.lineplot(df, x='size', y='total', hue='prints')
+plt.savefig('graph.png')
+plt.show()
+
+
+print(df)
