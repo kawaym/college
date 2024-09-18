@@ -1,9 +1,9 @@
 
 def start_db():
     try:
-        record_file = open("../data/record", "x")
+        record_file = open("../data/records", "xb")
     except:
-        record_file = open("../data/record", "a")
+        record_file = open("../data/records", "wb")
     return record_file 
 
 def close_db(file):
