@@ -35,10 +35,25 @@ class TABLE_HEADER:
     def display(self):
         for key, value in vars(self).items():
             print(f"{key}: {value}")
+    def toJSON(self):
+        return json.dumps(
+            self,
+            default=lambda o: o.__dict__, 
+            sort_keys=False,
+            indent=2)
+        
 
 def read_header_from_json():
     file = open("../data/metadata.json", 'r')
     data = json.load(file)
     table = TABLE_HEADER(**data)
-    table.display()
+    file.close()
+    return table
+
+def write_header_to_json(table):
+    file = open("../data/metadata.json", 'w')
+    data = table.toJSON()
+    file.write(data)
+    print("Novo header escrito com sucesso")
+    file.close()
     
