@@ -8,7 +8,7 @@ def start_db(path, name, table):
     file_path = path + name
     
     if(Path(file_path).exists()):
-        record_file = open(file_path, "r+")
+        record_file = open(file_path, "a+")
         return {"file": record_file, "inUse": True}
     else:
         record_file = open(file_path, "x+")
