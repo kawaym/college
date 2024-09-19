@@ -1,3 +1,5 @@
+import json
+
 from pathlib import Path
 from utils import convert_to_bytes
 from constants import DELIMITER
@@ -30,7 +32,13 @@ class TABLE_HEADER:
         for key, value in vars(self).items():
             file.write(convert_to_bytes(f'{key}: {value}\n'))
         file.write(convert_to_bytes(DELIMITER))
+    def display(self):
+        for key, value in vars(self).items():
+            print(f"{key}: {value}")
 
-def read_record(): 
-    # file.seek(63)
-    print('oie')
+def read_header_from_json():
+    file = open("../data/metadata.json", 'r')
+    data = json.load(file)
+    table = TABLE_HEADER(**data)
+    table.display()
+    
