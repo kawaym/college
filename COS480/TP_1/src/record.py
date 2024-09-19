@@ -8,14 +8,13 @@ def create_fixed_record(record):
             processed_record["bytes"] += record[key].ljust(VARIABLE_FIELDS_WITH_SIZE[key])
             continue
         processed_record["bytes"] += str(record[key]).rjust(MAX_SIZES[key], "0")
-    processed_record['bytes'] += '\n'
+    # processed_record['bytes'] += '\n'
     return processed_record
 
 def save_fixed_record(record, record_file):
     stream = create_fixed_record(record)
     byte_stream = convert_to_bytes(stream["bytes"])
-    print(len(stream["bytes"]))
-    record_file.write(byte_stream)
+    record_file.write(stream['bytes'])
     
 def create_variable_record(record):
     processed_record = {"bytes": ""}
@@ -42,10 +41,14 @@ def create_variable_record(record):
     data_fields = fixed_fields + variable_fields
     # + null_bitmap_bytes.decode("ascii") 
     
-    processed_record['bytes'] += data_fields + '\n'
+    processed_record['bytes'] += data_fields 
+    # + '\n'
     return processed_record
 
 def save_variable_record(record, record_file):
     stream = create_variable_record(record)
     byte_stream = convert_to_bytes(stream['bytes'])
-    record_file.write(byte_stream)
+    record_file.write(stream['bytes'])
+    
+def read_fixed_record(size, record_file):
+    return record_file.read(size)    

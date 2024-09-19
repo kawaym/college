@@ -6,6 +6,7 @@ def get_size(key):
 VARIABLE_FIELDS = ["Digimon", "Stage", "Type", "Attribute"]
 VARIABLE_FIELDS_WITH_SIZE = {key: get_size(key) for key in VARIABLE_FIELDS}
 
+
 MAX_SIZES = {key: get_size(key) for key in dataset}
 
 DELIMITER = "----------------------------------------------------------------------------------------------------------------------------------\n"

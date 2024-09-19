@@ -6,11 +6,11 @@ def start_db(path, name, table):
     file_path = path + name
     
     if(Path(file_path).exists()):
-        record_file = open(file_path, "r+b")
+        record_file = open(file_path, "r+")
         return {"file": record_file, "inUse": True}
     else:
-        record_file = open(file_path, "x+b")
-        table.write_to_file(record_file)
+        record_file = open(file_path, "x+")
+        # table.write_to_file(record_file)
         return {"file": record_file, "inUse": False} 
 
 def close_db(file):
@@ -28,6 +28,9 @@ class TABLE_HEADER:
     def write_to_file(self, file):
         file.write(convert_to_bytes(DELIMITER))
         for key, value in vars(self).items():
-            print(key)
             file.write(convert_to_bytes(f'{key}: {value}\n'))
         file.write(convert_to_bytes(DELIMITER))
+
+def read_record(): 
+    # file.seek(63)
+    print('oie')
