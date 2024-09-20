@@ -11,10 +11,12 @@ def create_fixed_record(record):
     # processed_record['bytes'] += '\n'
     return processed_record
 
-def save_fixed_record(record, record_file):
+def save_fixed_record(record, file, position=-1):
     stream = create_fixed_record(record)
     byte_stream = convert_to_bytes(stream["bytes"])
-    record_file.write(stream['bytes'])
+    if position != -1:
+        file.seek(position)
+    file.write(stream['bytes'])
     
 def create_variable_record(record):
     processed_record = {"bytes": ""}
@@ -45,10 +47,14 @@ def create_variable_record(record):
     # + '\n'
     return processed_record
 
-def save_variable_record(record, record_file):
+def save_variable_record(record, file):
     stream = create_variable_record(record)
-    byte_stream = convert_to_bytes(stream['bytes'])
-    record_file.write(stream['bytes'])
+    byte_stream = convert_to_bytes(stream["bytes"])
+    file.write(stream['bytes'])
     
-def read_fixed_record(size, record_file):
-    return record_file.read(size)    
+def read_fixed_record(size, file_path):
+    file = open(file_path, "r")
+    data = file.read(size)
+    file.close()
+    return data    
+    

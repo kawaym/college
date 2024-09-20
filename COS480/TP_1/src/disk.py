@@ -8,15 +8,10 @@ def start_db(path, name, table):
     file_path = path + name
     
     if(Path(file_path).exists()):
-        record_file = open(file_path, "a+")
-        return {"file": record_file, "inUse": True}
+        open(file_path, "a+")
     else:
-        record_file = open(file_path, "x+")
-        # table.write_to_file(record_file)
-        return {"file": record_file, "inUse": False} 
-
-def close_db(file):
-    file.close()    
+        open(file_path, "x")
+        # table.write_to_file(record_file) 
     
 class TABLE_HEADER:
     def __init__(self, table_name, blocking_factor=4096, is_fixed=True, organization_type="fixed_heap", *args, **kwargs):
@@ -54,6 +49,5 @@ def write_header_to_json(table):
     file = open("../data/metadata.json", 'w')
     data = table.toJSON()
     file.write(data)
-    print("Novo header escrito com sucesso")
     file.close()
     

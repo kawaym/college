@@ -26,7 +26,7 @@ TEST_MANY_INSERT = [
             "Lv50 SP": 20, "Lv50 Atk": 20, 
             "Lv50 Def": 20, "Lv50 Int": 20, 
             "Lv50 Spd": 20},
-    {"Number": 2, "Digimon": 'Antedeguemon', 
+    {"Number": 2, "Digimon": 'Porramon', 
             "Stage": "Baby", "Type": "Free", 
             "Attribute": "Neutral", "Memory": 0, 
             "Equip Slots": 1, "Lv 50 HP": 100, 
