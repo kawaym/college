@@ -43,6 +43,69 @@ def insert_many(data_array, file_path):
     write_header_to_json(header)
     print("Inserções realizadas com sucesso")
 
+def select_one(query, file_path, field="Number", size=3):
+    file = open(file_path, "r")
+    index = 0
+    offset = 0
+    record = ""
+    while True:
+        read_record = file.read(71)
+        if read_record == '':
+            break
+        read_number = read_record[offset:(offset + size)]
+        if query == read_number:
+            record = read_record
+            return [record, index]
+        index += 1
+    return ["", -1]
+
+def select_many_by_array(query, file_path, field="Number", size=3):
+    file = open(file_path, "r")
+    index = 0
+    offset = 0
+    records = []
+    while True:
+        read_record = file.read(71)
+        if read_record == '':
+            break
+        read_number = read_record[offset:(offset + size)]
+        if read_number in query:
+            records.append([read_record, index])
+        index += 1
+    return records
+
+def select_many_by_interval(query, file_path, field="Number", size=3):
+    file = open(file_path, "r")
+    index = 0
+    offset = 0
+    records = []
+    while True:
+        read_record = file.read(71)
+        if read_record == '':
+            break
+        read_number = int(read_record[offset: (offset + size)])
+        if read_number in range(query[0], query[1] + 1):
+            records.append([read_record, index])
+        index += 1
+    return records
+
+def select_many_by_field(query, file_path, field="Digimon", size=7):
+    file = open(file_path, "r")
+    index = 0
+    offset = 3
+    records = []
+    while True:
+        read_record = file.read(71)
+        if read_record == '':
+            break
+        read_field = read_record[offset: (offset + size)]
+        if read_field.strip() == query:
+            records.append([read_record, index])
+        index += 1
+    return records
+        
+
+
 def delete_by_index(index):
     header = read_header_from_json()
     header.records_number -= 1
