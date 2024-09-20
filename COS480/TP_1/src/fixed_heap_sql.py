@@ -21,17 +21,29 @@ def insert_one(data, file_path):
 def insert_many(data_array, file_path):
     header = read_header_from_json()
     header.records_number += len(data_array)
-    write_header_to_json(header)
-    file = open(file_path, "a+")
+    file = open(file_path, "r+")
+    rows = []
     if isinstance(data_array, pd.DataFrame):
         for _, row in data_array.iterrows():
-            save_fixed_record(row, file)
+            rows.append(row)
     else:
         for row in data_array:
-            save_fixed_record(row, file)
+            rows.append(row)
+    for position in header.deleted:
+        file = open(file_path, "r+")
+        if rows:
+            save_fixed_record(rows[0], file, position=position * header.record_size)
+            rows.pop(0)
+        file.close()
+    header.deleted.clear()
+    for row in rows:
+        file = open(file_path, "a+")
+        save_fixed_record(row, file)
+        file.close()
+    write_header_to_json(header)
     print("Inserções realizadas com sucesso")
 
-def delete_from_index(index):
+def delete_by_index(index):
     header = read_header_from_json()
     header.records_number -= 1
     header.deleted.append(index)
