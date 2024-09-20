@@ -33,7 +33,7 @@ def insert_many(data_array, file_path):
         file = open(file_path, "r+")
         if rows:
             save_fixed_record(rows[0], file, position=position * header.record_size)
-            header.deleted[0]
+            header.deleted.pop(0)
             rows.pop(0)
         file.close()
     for row in rows:
@@ -57,7 +57,7 @@ def select_one(query, file_path, field="Number", size=3):
             record = read_record
             return [record, index]
         index += 1
-    return ["", -1]
+    return []
 
 def select_many_by_array(query, file_path, field="Number", size=3):
     file = open(file_path, "r")
@@ -89,7 +89,7 @@ def select_many_by_interval(query, file_path, field="Number", size=3):
         index += 1
     return records
 
-def select_many_by_field(query, file_path, field="Digimon", size=7):
+def select_many_by_field(query, file_path, field="Digimon", size=20):
     file = open(file_path, "r")
     index = 0
     offset = 3
@@ -104,6 +104,17 @@ def select_many_by_field(query, file_path, field="Digimon", size=7):
         index += 1
     return records
         
+def delete_one(query, file_path, field="Number", size=3):
+    record = select_one(query, file_path, field=field, size=size)
+    if record:
+        delete_by_index(record[1])
+    print("Deleção realizada com sucesso")
+    
+def delete_many_by_field(query, file_path, field="Digimon", size=20):
+    records = select_many_by_field(query, file_path, field=field, size=size)
+    for record in records:
+        delete_by_index(record[1])
+    print("Deleções realizadas com sucesso")
 
 
 def delete_by_index(index):
@@ -111,4 +122,3 @@ def delete_by_index(index):
     header.records_number -= 1
     header.deleted.append(index)
     write_header_to_json(header)
-    print("Deleção realizada com sucesso")

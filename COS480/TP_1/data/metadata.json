@@ -1,12 +1,17 @@
 {
   "table_name": "Digimons",
-  "records_number": 249,
+  "records_number": 4195,
   "blocking_factor": 4096,
   "is_fixed": "True",
   "organization_type": "fixed_heap",
   "number_of_blocks": 1,
   "record_size": 71,
-  "deleted": [],
+  "deleted": [
+    2222,
+    2469,
+    2469,
+    3208
+  ],
   "schema": {
     "Number": 3,
     "Digimon": 20,
