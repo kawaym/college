@@ -33,9 +33,9 @@ def insert_many(data_array, file_path):
         file = open(file_path, "r+")
         if rows:
             save_fixed_record(rows[0], file, position=position * header.record_size)
+            header.deleted[0]
             rows.pop(0)
         file.close()
-    header.deleted.clear()
     for row in rows:
         file = open(file_path, "a+")
         save_fixed_record(row, file)
