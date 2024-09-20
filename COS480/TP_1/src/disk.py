@@ -2,7 +2,7 @@ import pandas as pd
 
 from pathlib import Path
 from constants import HEADER
-from fixed_heap_sql import insert_many
+from sql import insert_many
 
 def start_db():
     file_path = Path("../data/metadata.json")
@@ -20,5 +20,4 @@ def load_db_data(file_name):
     HEADER.write_header_to_json()
     open("../data/records", "w")
     insert_many(data) 
-    print("Dados inseridos na base de dados")
     

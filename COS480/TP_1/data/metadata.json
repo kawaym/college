@@ -4,8 +4,8 @@
   "blocking_factor": 4096,
   "is_fixed": "True",
   "organization_type": "fixed_heap",
-  "number_of_blocks": 1,
   "record_size": 71,
+  "number_of_blocks": 1,
   "deleted": [],
   "schema": {
     "Number": 3,

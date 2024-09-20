@@ -16,7 +16,6 @@ def insert_one(data):
         save_fixed_record(data, file)
         file.close()   
     HEADER.write_header_to_json()
-    print("Inserção realizada com sucesso")
 
 def insert_many(data_array):
     HEADER.read_header_from_json()
@@ -41,80 +40,77 @@ def insert_many(data_array):
         save_fixed_record(row, file)
         file.close()
     HEADER.write_header_to_json()
-    print("Inserções realizadas com sucesso")
 
-def select_one(query, field="Number", size=3):
+def select_one(query, field):
     file = open(FILE_PATH, "r")
     index = 0
-    offset = 0
+    offset = HEADER.get_offset(field)
     record = ""
     while True:
         read_record = file.read(71)
         if read_record == '':
             break
-        read_number = read_record[offset:(offset + size)]
+        read_number = read_record[offset:(offset + HEADER['schema'][field])]
         if query == read_number:
             record = read_record
             return [record, index]
         index += 1
     return []
 
-def select_many_by_array(query, field="Number", size=3):
+def select_many_by_array(query, field):
     file = open(FILE_PATH, "r")
     index = 0
-    offset = 0
+    offset = HEADER.get_offset(field)
     records = []
     while True:
         read_record = file.read(71)
         if read_record == '':
             break
-        read_number = read_record[offset:(offset + size)]
+        read_number = read_record[offset:(offset + HEADER['schema'][field])]
         if read_number in query:
             records.append([read_record, index])
         index += 1
     return records
 
-def select_many_by_interval(query, field="Number", size=3):
+def select_many_by_interval(query, field):
     file = open(FILE_PATH, "r")
     index = 0
-    offset = 0
+    offset = HEADER.get_offset(field)
     records = []
     while True:
         read_record = file.read(71)
         if read_record == '':
             break
-        read_number = int(read_record[offset: (offset + size)])
+        read_number = int(read_record[offset: (offset + HEADER['schema'][field])])
         if read_number in range(query[0], query[1] + 1):
             records.append([read_record, index])
         index += 1
     return records
 
-def select_many_by_field(query, field="Digimon", size=20):
+def select_many_by_field(query, field):
     file = open(FILE_PATH, "r")
     index = 0
-    offset = 3
+    offset = HEADER.get_offset(field)
     records = []
     while True:
         read_record = file.read(71)
         if read_record == '':
             break
-        read_field = read_record[offset: (offset + size)]
+        read_field = read_record[offset: (offset + HEADER['schema'][field])]
         if read_field.strip() == query:
             records.append([read_record, index])
         index += 1
     return records
         
-def delete_one(query, field="Number", size=3):
-    record = select_one(query, field=field, size=size)
+def delete_one(query, field):
+    record = select_one(query, field=field)
     if record:
         delete_by_index(record[1])
-    print("Deleção realizada com sucesso")
     
-def delete_many_by_field(query, field="Digimon", size=20):
-    records = select_many_by_field(query, field=field, size=size)
+def delete_many_by_field(query, field):
+    records = select_many_by_field(query, field=field)
     for record in records:
         delete_by_index(record[1])
-    print("Deleções realizadas com sucesso")
 
 
 def delete_by_index(index):

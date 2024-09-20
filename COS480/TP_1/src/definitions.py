@@ -7,13 +7,22 @@ class TABLE_HEADER:
         self.blocking_factor = blocking_factor
         self.is_fixed = is_fixed
         self.organization_type = organization_type
+        self.record_size = 0
         for key, value in  kwargs.items():
             setattr(self, key, value)
-    # def write_to_file(self, file):
-    #     file.write(convert_to_bytes(DELIMITER))
-    #     for key, value in vars(self).items():
-    #         file.write(convert_to_bytes(f'{key}: {value}\n'))
-    #     file.write(convert_to_bytes(DELIMITER))
+    def __getitem__(self, key):
+        return getattr(self, key, None)
+    def __setitem__(self, key, value):
+        return setattr(self, key, value)
+    def get_offset(self, field):
+        offset = 0
+        for key, value in self['schema'].items():
+            if key == field:
+                break
+            offset += value
+        if offset == self.record_size:
+            raise Exception("Field does not exist")
+        return offset
     def display(self):
         for key, value in vars(self).items():
             print(f"{key}: {value}")

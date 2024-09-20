@@ -1,7 +1,8 @@
 from disk import start_db, load_db_data
-from definitions import TABLE_HEADER
-
-table = TABLE_HEADER(table_name="Digimons", record_size=71)
+from sql import select_many_by_field
 
 start_db()
 load_db_data("digimons")
+
+data = select_many_by_field("Kuramon", field="Digimon")
+print(data[0][0])

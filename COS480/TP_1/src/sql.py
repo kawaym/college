@@ -3,32 +3,32 @@ import fixed_heap_sql as fh
 
 def insert_one(data):
     if HEADER.organization_type == "fixed_heap":
-        fh.insert_one(data)
+        return fh.insert_one(data)
 
 def insert_many(data_array):
     if HEADER.organization_type == "fixed_heap":
-        fh.insert_many(data_array)
+        return fh.insert_many(data_array)
 
-def select_one(query, field="Number", size=3):
+def select_one(query, field="Number"):
     if HEADER.organization_type == "fixed_heap":
-        fh.select_one(query, field=field, size=size)
+        return fh.select_one(query, field=field)
 
-def select_many_by_array(query, field="Number", size=3):
+def select_many_by_array(query, field="Number"):
     if HEADER.organization_type == "fixed_heap":
-        fh.select_many_by_array(query, field=field, size=size)
+        return fh.select_many_by_array(query, field=field)
 
-def select_many_by_interval(query, field="Number", size=3):
+def select_many_by_interval(query, field="Number"):
     if HEADER.organization_type == "fixed_heap":
-        fh.select_many_by_interval(query, field=field, size=size)
+        return fh.select_many_by_interval(query, field=field)
 
-def select_many_by_field(query, field="Digimon", size=20):
+def select_many_by_field(query, field="Digimon"):
     if HEADER.organization_type == "fixed_heap":
-        fh.select_many_by_field(query, field=field, size=size)
+        return fh.select_many_by_field(query, field=field)
         
-def delete_one(query, field="Number", size=3):
+def delete_one(query, field="Number"):
     if HEADER.organization_type == "fixed_heap":
-        fh.delete_one(query, field=field, size=size)
+        return fh.delete_one(query, field=field)
         
-def delete_many_by_field(query, field="Digimon", size=20):
+def delete_many_by_field(query, field="Digimon"):
     if HEADER.organization_type == "fixed_heap":
-        fh.delete_many_by_field(query, field=field, size=size)
+        return fh.delete_many_by_field(query, field=field)
