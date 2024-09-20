@@ -1,27 +1,27 @@
-from record import save_fixed_record, read_fixed_record
-from disk import read_header_from_json, write_header_to_json
+from record import save_fixed_record
+from constants import HEADER, FILE_PATH
 import pandas as pd
 
-def insert_one(data, file_path):
-    header = read_header_from_json()
-    header.records_number += 1
-    if header.deleted:
-        file = open(file_path, "r+")
-        position = header.record_size * header.deleted[0]
+def insert_one(data):
+    HEADER.read_header_from_json()
+    HEADER.records_number += 1
+    if HEADER.deleted:
+        file = open(FILE_PATH, "r+")
+        position = HEADER.record_size * HEADER.deleted[0]
         save_fixed_record(data, file, position=position)
-        header.deleted.pop(0)
+        HEADER.deleted.pop(0)
         file.close()
     else:
-        file = open(file_path, "a")
+        file = open(FILE_PATH, "a")
         save_fixed_record(data, file)
         file.close()   
-    write_header_to_json(header)
+    HEADER.write_header_to_json()
     print("Inserção realizada com sucesso")
 
-def insert_many(data_array, file_path):
-    header = read_header_from_json()
-    header.records_number += len(data_array)
-    file = open(file_path, "r+")
+def insert_many(data_array):
+    HEADER.read_header_from_json()
+    HEADER.records_number += len(data_array)
+    file = open(FILE_PATH, "r+")
     rows = []
     if isinstance(data_array, pd.DataFrame):
         for _, row in data_array.iterrows():
@@ -29,22 +29,22 @@ def insert_many(data_array, file_path):
     else:
         for row in data_array:
             rows.append(row)
-    for position in header.deleted:
-        file = open(file_path, "r+")
+    for position in HEADER.deleted:
+        file = open(FILE_PATH, "r+")
         if rows:
-            save_fixed_record(rows[0], file, position=position * header.record_size)
-            header.deleted.pop(0)
+            save_fixed_record(rows[0], file, position=position * HEADER.record_size)
+            HEADER.deleted.pop(0)
             rows.pop(0)
         file.close()
     for row in rows:
-        file = open(file_path, "a+")
+        file = open(FILE_PATH, "a+")
         save_fixed_record(row, file)
         file.close()
-    write_header_to_json(header)
+    HEADER.write_header_to_json()
     print("Inserções realizadas com sucesso")
 
-def select_one(query, file_path, field="Number", size=3):
-    file = open(file_path, "r")
+def select_one(query, field="Number", size=3):
+    file = open(FILE_PATH, "r")
     index = 0
     offset = 0
     record = ""
@@ -59,8 +59,8 @@ def select_one(query, file_path, field="Number", size=3):
         index += 1
     return []
 
-def select_many_by_array(query, file_path, field="Number", size=3):
-    file = open(file_path, "r")
+def select_many_by_array(query, field="Number", size=3):
+    file = open(FILE_PATH, "r")
     index = 0
     offset = 0
     records = []
@@ -74,8 +74,8 @@ def select_many_by_array(query, file_path, field="Number", size=3):
         index += 1
     return records
 
-def select_many_by_interval(query, file_path, field="Number", size=3):
-    file = open(file_path, "r")
+def select_many_by_interval(query, field="Number", size=3):
+    file = open(FILE_PATH, "r")
     index = 0
     offset = 0
     records = []
@@ -89,8 +89,8 @@ def select_many_by_interval(query, file_path, field="Number", size=3):
         index += 1
     return records
 
-def select_many_by_field(query, file_path, field="Digimon", size=20):
-    file = open(file_path, "r")
+def select_many_by_field(query, field="Digimon", size=20):
+    file = open(FILE_PATH, "r")
     index = 0
     offset = 3
     records = []
@@ -104,21 +104,21 @@ def select_many_by_field(query, file_path, field="Digimon", size=20):
         index += 1
     return records
         
-def delete_one(query, file_path, field="Number", size=3):
-    record = select_one(query, file_path, field=field, size=size)
+def delete_one(query, field="Number", size=3):
+    record = select_one(query, field=field, size=size)
     if record:
         delete_by_index(record[1])
     print("Deleção realizada com sucesso")
     
-def delete_many_by_field(query, file_path, field="Digimon", size=20):
-    records = select_many_by_field(query, file_path, field=field, size=size)
+def delete_many_by_field(query, field="Digimon", size=20):
+    records = select_many_by_field(query, field=field, size=size)
     for record in records:
         delete_by_index(record[1])
     print("Deleções realizadas com sucesso")
 
 
 def delete_by_index(index):
-    header = read_header_from_json()
-    header.records_number -= 1
-    header.deleted.append(index)
-    write_header_to_json(header)
+    HEADER.read_header_from_json()
+    HEADER.records_number -= 1
+    HEADER.deleted.append(index)
+    HEADER.write_header_to_json()
