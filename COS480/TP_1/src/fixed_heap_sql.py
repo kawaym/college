@@ -5,16 +5,18 @@ import pandas as pd
 def insert_one(data):
     HEADER.read_header_from_json()
     HEADER.records_number += 1
+    file = open(FILE_PATH, "r+")
     if HEADER.deleted:
-        file = open(FILE_PATH, "r+")
         position = HEADER.record_size * HEADER.deleted[0]
         save_fixed_record(data, file, position=position)
         HEADER.deleted.pop(0)
-        file.close()
     else:
+        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)) - HEADER.record_size):
+            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)))
+            HEADER.number_of_blocks += 1
         file = open(FILE_PATH, "a")
         save_fixed_record(data, file)
-        file.close()   
+    file.close()   
     HEADER.write_header_to_json()
 
 def insert_many(data_array):
@@ -28,17 +30,18 @@ def insert_many(data_array):
     else:
         for row in data_array:
             rows.append(row)
+    file = open(FILE_PATH, "r+")
     for position in HEADER.deleted:
-        file = open(FILE_PATH, "r+")
         if rows:
             save_fixed_record(rows[0], file, position=position * HEADER.record_size)
             HEADER.deleted.pop(0)
             rows.pop(0)
-        file.close()
     for row in rows:
-        file = open(FILE_PATH, "a+")
+        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)) - HEADER.record_size):
+            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)))
+            HEADER.number_of_blocks += 1
         save_fixed_record(row, file)
-        file.close()
+    file.close()
     HEADER.write_header_to_json()
 
 def select_one(query, field):

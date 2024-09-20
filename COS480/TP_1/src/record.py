@@ -1,5 +1,4 @@
 from constants import VARIABLE_FIELDS_WITH_SIZE, MAX_SIZES
-from utils import convert_to_bytes
 
 def create_fixed_record(record):
     processed_record = {"bytes": ""}

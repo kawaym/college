@@ -5,7 +5,7 @@
   "is_fixed": "True",
   "organization_type": "fixed_heap",
   "record_size": 71,
-  "number_of_blocks": 1,
+  "number_of_blocks": 6,
   "deleted": [],
   "schema": {
     "Number": 3,

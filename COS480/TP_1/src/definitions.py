@@ -8,6 +8,7 @@ class TABLE_HEADER:
         self.is_fixed = is_fixed
         self.organization_type = organization_type
         self.record_size = 0
+        self.number_of_blocks = 1
         for key, value in  kwargs.items():
             setattr(self, key, value)
     def __getitem__(self, key):
