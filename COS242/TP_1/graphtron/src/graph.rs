@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{clone, collections::HashMap};
 
 #[derive(Debug)]
 struct Edge {
@@ -143,5 +143,36 @@ impl Graph {
                 / 2.0;
         }
         number
+    }
+
+    fn create_adjacency_matrix(&self) -> Vec<Vec<i32>> {
+        let mut matrix = vec![vec![0; self.vertices.len()]; self.vertices.len()];
+
+        let vertex_indices: HashMap<String, usize> = self
+            .vertices
+            .keys()
+            .enumerate()
+            .map(|(i, v)| (v.clone(), i))
+            .collect();
+
+        for (from, vertex) in &self.vertices {
+            if let Some(&i) = vertex_indices.get(from) {
+                for edge in &vertex.edges {
+                    if let Some(&j) = vertex_indices.get(&edge.target) {
+                        matrix[i][j] = edge.weight;
+                    }
+                }
+            }
+        }
+
+        matrix
+    }
+
+    pub fn display_adjacency_matrix(&self) {
+        let matrix = &self.create_adjacency_matrix();
+        let vertices = &self.vertices.keys().cloned().collect::<Vec<String>>();
+
+        println!("{:?}", vertices);
+        println!("{:?}", matrix);
     }
 }
