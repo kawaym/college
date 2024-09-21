@@ -1,8 +1,7 @@
-use graphtron::Graph;
+mod graph;
+mod parser;
 
 fn main() {
-    let mut graph = Graph::new();
-    graph.add_vertex("1".to_string());
+    let mut graph = parser::read_graph("./data/grafo_teste.txt");
     graph.display();
-    println!("Hello, world!");
 }
