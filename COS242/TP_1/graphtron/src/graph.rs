@@ -64,4 +64,8 @@ impl Graph {
             }
         }
     }
+
+    pub fn get_vertices_number(self) -> usize {
+        self.vertices.len()
+    }
 }
