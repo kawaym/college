@@ -175,4 +175,25 @@ impl Graph {
         println!("{:?}", vertices);
         println!("{:?}", matrix);
     }
+
+    fn create_adjacency_list(&self) -> HashMap<String, Vec<(String, i32)>> {
+        let mut list = HashMap::new();
+
+        for (vertex_id, vertex) in &self.vertices {
+            let edges: Vec<(String, i32)> = vertex
+                .edges
+                .iter()
+                .map(|edge| (edge.target.clone(), edge.weight))
+                .collect();
+            list.insert(vertex_id.clone(), edges);
+        }
+
+        list
+    }
+
+    pub fn display_adjacency_list(&self) {
+        let list = &self.create_adjacency_list();
+
+        println!("{:?}", list)
+    }
 }
