@@ -26,14 +26,22 @@ impl Vertex {
 }
 
 #[derive(Debug)]
+enum GraphKind {
+    Bidirectional,
+    Unidirectional,
+}
+
+#[derive(Debug)]
 pub struct Graph {
     vertices: HashMap<String, Vertex>,
+    kind: GraphKind,
 }
 
 impl Graph {
     pub fn new() -> Self {
         Graph {
             vertices: HashMap::new(),
+            kind: GraphKind::Bidirectional,
         }
     }
 
@@ -67,5 +75,19 @@ impl Graph {
 
     pub fn get_vertices_number(self) -> usize {
         self.vertices.len()
+    }
+
+    pub fn get_edges_number(self) -> usize {
+        let mut number: usize = 0;
+        for (_, vertex) in &self.vertices {
+            number += vertex.edges.len()
+        }
+
+        match self.kind {
+            GraphKind::Bidirectional => number = number / 2,
+            GraphKind::Unidirectional => number = number,
+        }
+
+        return number;
     }
 }
