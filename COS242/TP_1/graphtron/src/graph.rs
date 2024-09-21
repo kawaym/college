@@ -71,7 +71,17 @@ impl Graph {
         }
     }
 
-    pub fn display(&self) {
+    pub fn display(&self, format: String) {
+        if format == "Matriz" {
+            self.display_adjacency_matrix();
+            return;
+        }
+
+        if format == "Lista" {
+            self.display_adjacency_list();
+            return;
+        }
+
         for (id, vertex) in &self.vertices {
             println!("Vertex {id}:");
             for edge in &vertex.edges {
@@ -168,7 +178,7 @@ impl Graph {
         matrix
     }
 
-    pub fn display_adjacency_matrix(&self) {
+    fn display_adjacency_matrix(&self) {
         let matrix = &self.create_adjacency_matrix();
         let vertices = &self.vertices.keys().cloned().collect::<Vec<String>>();
 
@@ -191,7 +201,7 @@ impl Graph {
         list
     }
 
-    pub fn display_adjacency_list(&self) {
+    fn display_adjacency_list(&self) {
         let list = &self.create_adjacency_list();
 
         println!("{:?}", list)
