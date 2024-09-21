@@ -126,4 +126,22 @@ impl Graph {
         number /= self.vertices.len() as f32;
         number
     }
+
+    pub fn get_degree_median(&self) -> f32 {
+        let mut vertices: Vec<u32> = vec![];
+        let mut number: f32 = -1.0;
+        for (_, vertex) in &self.vertices {
+            vertices.push(vertex.degree.clone());
+        }
+        vertices.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        if vertices.len() % 2 != 0 {
+            number = vertices[vertices.len() / 2] as f32
+        } else {
+            number = (vertices[vertices.len() / 2] as f32
+                + vertices[vertices.len() / 2 - 1] as f32)
+                / 2.0;
+        }
+        number
+    }
 }
