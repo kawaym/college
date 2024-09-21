@@ -10,6 +10,7 @@ struct Edge {
 pub struct Vertex {
     id: String,
     edges: Vec<Edge>,
+    degree: u32,
 }
 
 impl Vertex {
@@ -17,10 +18,16 @@ impl Vertex {
         Vertex {
             id,
             edges: Vec::new(),
+            degree: 0,
         }
     }
 
+    fn add_degree(&mut self) {
+        self.degree = self.degree + 1
+    }
+
     fn add_edge(&mut self, target: String, weight: i32) {
+        self.add_degree();
         self.edges.push(Edge { target, weight })
     }
 }
@@ -73,14 +80,14 @@ impl Graph {
         }
     }
 
-    pub fn get_vertices_number(self) -> usize {
-        self.vertices.len()
+    pub fn get_vertices_number(&self) -> u32 {
+        self.vertices.len() as u32
     }
 
-    pub fn get_edges_number(self) -> usize {
-        let mut number: usize = 0;
+    pub fn get_edges_number(&self) -> u32 {
+        let mut number = 0;
         for (_, vertex) in &self.vertices {
-            number += vertex.edges.len()
+            number += vertex.degree
         }
 
         match self.kind {
@@ -89,5 +96,34 @@ impl Graph {
         }
 
         return number;
+    }
+
+    pub fn get_degree_minimum(&self) -> u32 {
+        let mut number: u32 = u32::max_value();
+        for (_, vertex) in &self.vertices {
+            if vertex.degree < number {
+                number = vertex.degree
+            }
+        }
+        number
+    }
+
+    pub fn get_degree_maximum(&self) -> u32 {
+        let mut number: u32 = 0;
+        for (_, vertex) in &self.vertices {
+            if vertex.degree > number {
+                number = vertex.degree
+            }
+        }
+        number
+    }
+
+    pub fn get_degree_average(&self) -> f32 {
+        let mut number = 0.0;
+        for (_, vertex) in &self.vertices {
+            number += vertex.degree as f32
+        }
+        number /= self.vertices.len() as f32;
+        number
     }
 }
