@@ -11,8 +11,8 @@ def insert_one(data):
         save_fixed_record(data, file, position=position)
         HEADER.deleted.pop(0)
     else:
-        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)) - HEADER.record_size):
-            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)))
+        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks)) - HEADER.record_size):
+            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks)))
             HEADER.number_of_blocks += 1
         file = open(FILE_PATH, "a")
         save_fixed_record(data, file)
@@ -37,8 +37,8 @@ def insert_many(data_array):
             HEADER.deleted.pop(0)
             rows.pop(0)
     for row in rows:
-        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)) - HEADER.record_size):
-            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks - 1)))
+        if file.tell() > ((HEADER.blocking_factor * (HEADER.number_of_blocks)) - HEADER.record_size):
+            file.seek((HEADER.blocking_factor * (HEADER.number_of_blocks)))
             HEADER.number_of_blocks += 1
         save_fixed_record(row, file)
     file.close()
