@@ -1,4 +1,4 @@
-use std::{clone, collections::HashMap};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug)]
 struct Edge {
@@ -7,10 +7,16 @@ struct Edge {
 }
 
 #[derive(Debug)]
+enum VertexStatus {
+    Marked,
+    Unmarked,
+}
+#[derive(Debug)]
 pub struct Vertex {
     id: String,
     edges: Vec<Edge>,
     degree: u32,
+    status: VertexStatus,
 }
 
 impl Vertex {
@@ -19,6 +25,7 @@ impl Vertex {
             id,
             edges: Vec::new(),
             degree: 0,
+            status: VertexStatus::Unmarked,
         }
     }
 
@@ -29,6 +36,10 @@ impl Vertex {
     fn add_edge(&mut self, target: String, weight: i32) {
         self.add_degree();
         self.edges.push(Edge { target, weight })
+    }
+
+    fn mark(&mut self) {
+        self.status = VertexStatus::Marked
     }
 }
 
@@ -205,5 +216,39 @@ impl Graph {
         let list = &self.create_adjacency_list();
 
         println!("{:?}", list)
+    }
+
+    fn umark_all_vertices(&mut self) {
+        for (_, vertex) in &mut self.vertices {
+            vertex.status = VertexStatus::Unmarked
+        }
+    }
+
+    pub fn bfs(&mut self, root_id: &str) -> Vec<String> {
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+        let mut result = Vec::new();
+
+        // Verifica se o vértice inicial existe
+        if self.vertices.contains_key(root_id) {
+            queue.push_front(root_id.to_string());
+            visited.insert(root_id.to_string());
+
+            loop {
+                let vertex_id = queue.remove(0);
+                result.push(vertex_id.clone());
+
+                if let Some(vertex) = self.vertices.get(&vertex_id) {
+                    for edge in &vertex.edges {
+                        if !visited.contains(&edge.target) {
+                            visited.insert(edge.target.clone());
+                            queue.push(edge.target.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        result
     }
 }
