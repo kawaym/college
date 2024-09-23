@@ -17,6 +17,9 @@ def load_db_data(file_name):
     data = pd.read_csv(file_path)
     HEADER.read_header_from_json()
     HEADER.records_number = 0
+    HEADER.number_of_blocks = 1
+    HEADER.deleted = []
+    HEADER['end_of_free_space'] = []
     HEADER.write_header_to_json()
     open("../data/records", "w")
     insert_many(data) 

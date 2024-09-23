@@ -1,8 +1,9 @@
 from disk import start_db, load_db_data
-from sql import select_many_by_field
+from sql import delete_many_by_field
+from fetch import dataset
 
 start_db()
 load_db_data("digimons")
 
-data = select_many_by_field("Kuramon", field="Digimon")
+data = delete_many_by_field("Free", "Type")
 print(data)

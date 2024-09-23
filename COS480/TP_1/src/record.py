@@ -16,7 +16,7 @@ def save_fixed_record(record, file, position=-1):
     file.write(stream['bytes'])
     
 def create_variable_record(record):
-    processed_record = {"bytes": ""}
+    processed_record = {"bytes": "r|"}
     fixed_fields = ""
     variable_fields = ""
     header_size = len("".join('0000' for _ in VARIABLE_FIELDS_WITH_SIZE.keys()))
@@ -24,7 +24,7 @@ def create_variable_record(record):
     for key in record.keys():
         if (key in VARIABLE_FIELDS_WITH_SIZE):
             continue
-        fixed_fields += str(record[key])
+        fixed_fields += str(record[key]).rjust(MAX_SIZES[key], "0")
         
     offset = header_size + len(fixed_fields) 
         
@@ -36,13 +36,14 @@ def create_variable_record(record):
         
     data_fields = fixed_fields + variable_fields
     
-    processed_record['bytes'] += data_fields
+    processed_record['bytes'] +=  data_fields + '|'
     
     return processed_record
 
-def save_variable_record(record, file):
-    stream = create_variable_record(record)
-    file.write(stream['bytes'])
+def save_variable_record(record, file, position=-1):
+    if position != -1:
+        file.seek(position)
+    file.write(record['bytes'])
     
 def read_fixed_record(size, file_path):
     file = open(file_path, "r")

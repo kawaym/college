@@ -7,7 +7,7 @@ class TABLE_HEADER:
         self.blocking_factor = blocking_factor
         self.is_fixed = is_fixed
         self.organization_type = organization_type
-        self.record_size = 0
+        self.record_size = -1
         self.deleted = []
         self.number_of_blocks = 0
         for key, value in  kwargs.items():
