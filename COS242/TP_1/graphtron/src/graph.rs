@@ -1,17 +1,17 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Edge {
     target: String,
     weight: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum VertexStatus {
     Marked,
     Unmarked,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     id: String,
     edges: Vec<Edge>,
@@ -218,33 +218,41 @@ impl Graph {
         println!("{:?}", list)
     }
 
-    fn umark_all_vertices(&mut self) {
+    fn unmark_all_vertices(&mut self) {
         for (_, vertex) in &mut self.vertices {
             vertex.status = VertexStatus::Unmarked
         }
     }
 
     pub fn bfs(&mut self, root_id: &str) -> Vec<String> {
-        let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
         let mut result = Vec::new();
 
-        // Verifica se o vértice inicial existe
+        self.unmark_all_vertices();
+
         if self.vertices.contains_key(root_id) {
-            queue.push_front(root_id.to_string());
-            visited.insert(root_id.to_string());
+            queue.push_back(root_id.to_string());
+            self.vertices.get_mut(root_id).unwrap().mark();
 
             loop {
-                let vertex_id = queue.remove(0);
-                result.push(vertex_id.clone());
+                let vertex_id = queue.pop_front();
+                match vertex_id {
+                    Some(id) => {
+                        result.push(id.clone());
 
-                if let Some(vertex) = self.vertices.get(&vertex_id) {
-                    for edge in &vertex.edges {
-                        if !visited.contains(&edge.target) {
-                            visited.insert(edge.target.clone());
-                            queue.push(edge.target.clone());
+                        if let Some(vertex) = self.vertices.get(&id).cloned() {
+                            for edge in &vertex.edges {
+                                match self.vertices.get_mut(&edge.target).unwrap().status {
+                                    VertexStatus::Marked => (),
+                                    VertexStatus::Unmarked => {
+                                        self.vertices.get_mut(&edge.target).unwrap().mark();
+                                        queue.push_back(edge.target.clone());
+                                    }
+                                }
+                            }
                         }
                     }
+                    None => break,
                 }
             }
         }
