@@ -10,6 +10,7 @@ class TABLE_HEADER:
         self.record_size = -1
         self.deleted = []
         self.number_of_blocks = 0
+        self.number_of_deletes_since_last_organization = 0
         for key, value in  kwargs.items():
             setattr(self, key, value)
     def __getitem__(self, key):

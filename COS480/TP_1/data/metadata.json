@@ -7,6 +7,7 @@
   "record_size": -1,
   "deleted": [],
   "number_of_blocks": 5,
+  "number_of_deletes_since_last_organization": 0,
   "end_of_free_space": [
     48,
     33,

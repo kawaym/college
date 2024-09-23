@@ -4,6 +4,4 @@ from fetch import dataset
 
 start_db()
 load_db_data("digimons")
-
-data = delete_many_by_field("Free", "Type")
-print(data)
+# delete_many_by_field("Electric", "Attribute")

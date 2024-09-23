@@ -168,21 +168,68 @@ def select_many_by_field(query, field):
 def delete_one(query, field):
     record = select_one(query, field)
     if record:
+        HEADER.records_number -= 1
         with open(FILE_PATH, 'r') as file:
             content = file.read()
         true_record = "r|" + record + "|"
         content = content.replace(true_record, ' ' * len(record))
         with open(FILE_PATH, "w") as file:
             file.write(content)
+    HEADER.number_of_deletes_since_last_organization += 1
+    if HEADER.number_of_deletes_since_last_organization > 10:
+        organize()
+        HEADER.write_header_to_json()
     return None
 
 def delete_many_by_field(query, field):
     records = select_many_by_field(query, field)
+    HEADER.records_number -= len(records)
     with open(FILE_PATH, 'r') as file:
         content = file.read()
     for record in records:
         true_record = "r|" + record + "|"
         content = content.replace(true_record, ' ' * len(record))
     with open(FILE_PATH, "w") as file:
-        file.write(content) 
+        file.write(content)
+    HEADER.number_of_deletes_since_last_organization += 1
+    if HEADER.number_of_deletes_since_last_organization > 10:
+        organize()
+    HEADER.write_header_to_json()
     return None       
+
+def organize():
+    HEADER.read_header_from_json()
+    def process_block(file):
+        initial_index = file.tell() 
+
+        block = file.read(HEADER.blocking_factor)
+        
+        if not block:
+            return None, None
+        
+        block_without_whitespace = ''.join(block.split())
+
+        final_block = ' ' * (HEADER.blocking_factor - len(block_without_whitespace)) + block_without_whitespace
+
+        first_record = re.search(r'r\|', final_block)
+        
+        if first_record:
+            index_first_record = first_record.start()
+        else:
+            index_first_record = None
+        return final_block, index_first_record
+
+    with open(FILE_PATH, 'r+') as file:
+        for i in range(0, HEADER.number_of_blocks):
+            modified_block, record_index = process_block(file)
+            
+            if modified_block is None:
+                break
+            
+            file.seek(HEADER.blocking_factor * (i + 1) - len(modified_block))
+            
+            file.write(modified_block)
+            
+            if record_index is not None:
+                HEADER['end_of_free_space'][i] = record_index
+    HEADER.write_header_to_json()
