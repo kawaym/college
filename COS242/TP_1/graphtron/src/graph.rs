@@ -259,4 +259,40 @@ impl Graph {
 
         result
     }
+
+    pub fn dfs(&mut self, root_id: &str) -> Vec<String> {
+        let mut stack: Vec<String> = Vec::new();
+        let mut result: Vec<String> = Vec::new();
+
+        self.unmark_all_vertices();
+
+        if self.vertices.contains_key(root_id) {
+            stack.push(root_id.to_string());
+            self.vertices.get_mut(root_id).unwrap().mark();
+
+            loop {
+                let vertex_id = stack.pop();
+                match vertex_id {
+                    Some(id) => {
+                        result.push(id.clone());
+
+                        if let Some(vertex) = self.vertices.get(&id).cloned() {
+                            for edge in &vertex.edges {
+                                match self.vertices.get_mut(&edge.target).unwrap().status {
+                                    VertexStatus::Marked => (),
+                                    VertexStatus::Unmarked => {
+                                        self.vertices.get_mut(&edge.target).unwrap().mark();
+                                        stack.push(edge.target.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    None => break,
+                }
+            }
+        }
+
+        result
+    }
 }
