@@ -1,6 +1,7 @@
 use std::{
     cmp::max_by,
     collections::{HashMap, VecDeque},
+    usize,
 };
 
 #[derive(Debug, Clone)]
@@ -291,7 +292,11 @@ impl Graph {
         result
     }
 
-    pub fn bfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
+    fn bfs(
+        &mut self,
+        root_id: usize,
+        stop_id: Option<usize>,
+    ) -> Vec<(usize, usize, Option<usize>)> {
         let mut queue: VecDeque<usize> = VecDeque::new();
         let mut result: Vec<usize> = Vec::new();
         let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
@@ -299,6 +304,8 @@ impl Graph {
         let vertices_len = self.get_vertices_number();
         let mut levels: Vec<usize> = vec![0; vertices_len as usize];
         let mut parents: Vec<Option<usize>> = vec![None; vertices_len as usize];
+
+        let mut stop_flag = false;
 
         self.unmark_all_vertices();
 
@@ -316,6 +323,10 @@ impl Graph {
                             levels[id] = levels[parent] + 1
                         }
 
+                        if stop_flag {
+                            break;
+                        }
+
                         if let Some(vertex) = &self.vertices[id].clone() {
                             for edge in &vertex.edges {
                                 match self.vertices[edge.target].as_mut().unwrap().status {
@@ -324,6 +335,12 @@ impl Graph {
                                         parents[edge.target] = Some(id);
                                         self.vertices[edge.target].as_mut().unwrap().mark();
                                         queue.push_back(edge.target.clone());
+                                    }
+                                }
+                                if let Some(stop_id_parsed) = stop_id {
+                                    if stop_id_parsed == edge.target {
+                                        stop_flag = true;
+                                        break;
                                     }
                                 }
                             }
@@ -337,13 +354,13 @@ impl Graph {
         for i in 0..levels.len() {
             tree.push((i, levels[i], parents[i]));
         }
-
+        println!("{:?}", tree);
         tree
     }
 
     pub fn display_bfs(&mut self, root_id: &str) {
-        let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
-        let data = self.bfs(parsed_id);
+        let parsed_root_id: usize = root_id.parse::<usize>().unwrap() - 1;
+        let data = self.bfs(parsed_root_id, None);
 
         let tree = self.create_tree_view(data);
         for vertex in tree {
@@ -351,6 +368,31 @@ impl Graph {
             println!("  -> nível: {}", vertex.level);
             println!("  -> pai: {}", vertex.parent);
         }
+    }
+
+    fn calculate_distance(&mut self, start_id: usize, end_id: usize) -> usize {
+        let data = self.bfs(start_id, Some(end_id));
+        let mut distance = usize::MIN;
+
+        for vector in data {
+            if vector.1 > distance {
+                distance = vector.1;
+            }
+        }
+
+        distance
+    }
+
+    pub fn display_distance(&mut self, start_id: &str, end_id: &str) {
+        let parsed_start_id = start_id.parse::<usize>().unwrap() - 1;
+        let parsed_end_id = end_id.parse::<usize>().unwrap() - 1;
+
+        let data = self.calculate_distance(parsed_start_id, parsed_end_id);
+
+        println!(
+            "Distância entre os vetores {} e {} é de: {}",
+            start_id, end_id, data
+        );
     }
 
     fn dfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {

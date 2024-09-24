@@ -27,11 +27,6 @@ pub fn read_graph(filename: &str) -> Graph {
 
     if let Ok(lines) = read_lines_from_file(filename) {
         let mut count = 0;
-        // graph = Graph::new(
-        //     lines.flatten().collect::<Vec<String>>()[0]
-        //         .parse::<usize>()
-        //         .unwrap(),
-        // );
         for line in lines.flatten() {
             if count == 0 {
                 graph = Graph::new(line.parse::<usize>().unwrap());
