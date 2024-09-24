@@ -1,6 +1,6 @@
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::time::Instant;
 
 use graphtron::parser;
 
@@ -26,11 +26,13 @@ fn measure_distance(dir: &str) -> io::Result<()> {
         if path.is_file() {
             if let Some(path_str) = path.to_str() {
                 let mut graph = parser::read_graph(path_str);
+                let start_time = Instant::now();
                 let diameter = graph.calculate_diameter();
+                let duration = start_time.elapsed();
 
                 println!(
-                    "O diâmetro para o grafo do arquivo {} é de: {}",
-                    path_str, diameter
+                    "O diâmetro para o grafo do arquivo {} é de: {}. Esse dado foi calculado em: {}s",
+                    path_str, diameter, duration.as_secs_f64()
                 );
             }
         }
