@@ -354,7 +354,6 @@ impl Graph {
         for i in 0..levels.len() {
             tree.push((i, levels[i], parents[i]));
         }
-        println!("{:?}", tree);
         tree
     }
 
@@ -393,6 +392,29 @@ impl Graph {
             "Distância entre os vetores {} e {} é de: {}",
             start_id, end_id, data
         );
+    }
+
+    pub fn calculate_diameter(&mut self) -> usize {
+        let mut diameter = usize::MIN;
+
+        for vertex_start_opt in &self.vertices.clone() {
+            if let Some(vertex_start) = vertex_start_opt {
+                for vertex_end_opt in &self.vertices.clone() {
+                    if let Some(vertex_end) = vertex_end_opt {
+                        if vertex_start.id == vertex_end.id {
+                            continue;
+                        }
+
+                        let distance = &mut self.calculate_distance(vertex_start.id, vertex_end.id);
+                        if *distance > diameter {
+                            diameter = *distance;
+                        }
+                    }
+                }
+            }
+        }
+        println!("{}", diameter);
+        diameter
     }
 
     fn dfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
