@@ -1,8 +1,11 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    cmp::max_by,
+    collections::{HashMap, VecDeque},
+};
 
 #[derive(Debug, Clone)]
 struct Edge {
-    target: String,
+    target: usize,
     weight: i32,
 }
 
@@ -11,16 +14,17 @@ enum VertexStatus {
     Marked,
     Unmarked,
 }
+
 #[derive(Debug, Clone)]
 pub struct Vertex {
-    id: String,
+    id: usize,
     edges: Vec<Edge>,
     degree: u32,
     status: VertexStatus,
 }
 
 impl Vertex {
-    fn new(id: String) -> Self {
+    fn new(id: usize) -> Self {
         Vertex {
             id,
             edges: Vec::new(),
@@ -33,7 +37,7 @@ impl Vertex {
         self.degree = self.degree + 1
     }
 
-    fn add_edge(&mut self, target: String, weight: i32) {
+    fn add_edge(&mut self, target: usize, weight: i32) {
         self.add_degree();
         self.edges.push(Edge { target, weight })
     }
@@ -51,31 +55,36 @@ enum GraphKind {
 
 #[derive(Debug)]
 pub struct Graph {
-    vertices: HashMap<String, Vertex>,
+    vertices: Vec<Option<Vertex>>,
     kind: GraphKind,
 }
 
 impl Graph {
-    pub fn new() -> Self {
+    pub fn new(size: usize) -> Self {
         Graph {
-            vertices: HashMap::new(),
+            vertices: vec![None; size],
             kind: GraphKind::Bidirectional,
         }
     }
 
-    pub fn add_vertex(&mut self, id: String) {
-        self.vertices.entry(id.clone()).or_insert(Vertex::new(id));
+    pub fn add_vertex(&mut self, id: &usize) {
+        match &self.vertices[id.clone()] {
+            Some(_) => (),
+            None => {
+                self.vertices[id.clone()] = Some(Vertex::new(id.clone()));
+            }
+        }
     }
 
-    pub fn add_edge(&mut self, from: String, to: String, weight: i32) {
-        self.add_vertex(from.clone());
-        self.add_vertex(to.clone());
-        if let Some(vertex) = self.vertices.get_mut(&from) {
+    pub fn add_edge(&mut self, from: usize, to: usize, weight: i32) {
+        self.add_vertex(&from.clone());
+        self.add_vertex(&to.clone());
+        if let Some(vertex) = &mut self.vertices[from.clone()] {
             vertex.add_edge(to.clone(), weight);
         } else {
             println!("Vertex {from} was not found!");
         }
-        if let Some(vertex) = self.vertices.get_mut(&to) {
+        if let Some(vertex) = &mut self.vertices[to.clone()] {
             vertex.add_edge(from.clone(), weight);
         } else {
             println!("Vertex {to} was not found!");
@@ -93,10 +102,15 @@ impl Graph {
             return;
         }
 
-        for (id, vertex) in &self.vertices {
-            println!("Vertex {id}:");
-            for edge in &vertex.edges {
-                println!(" -> {} (weight {})", edge.target, edge.weight)
+        for vertex in &self.vertices {
+            match vertex {
+                Some(info) => {
+                    println!("{}", info.id + 1);
+                    for edge in &info.edges {
+                        println!(" -> {} (weight {})", edge.target + 1, edge.weight)
+                    }
+                }
+                None => (),
             }
         }
     }
@@ -107,8 +121,11 @@ impl Graph {
 
     pub fn get_edges_number(&self) -> u32 {
         let mut number = 0;
-        for (_, vertex) in &self.vertices {
-            number += vertex.degree
+        for vertex in &self.vertices {
+            match vertex {
+                Some(info) => number += info.degree,
+                None => (),
+            }
         }
 
         match self.kind {
@@ -121,9 +138,11 @@ impl Graph {
 
     pub fn get_degree_minimum(&self) -> u32 {
         let mut number: u32 = u32::max_value();
-        for (_, vertex) in &self.vertices {
-            if vertex.degree < number {
-                number = vertex.degree
+        for vertex_opt in &self.vertices {
+            if let Some(vertex) = vertex_opt {
+                if vertex.degree < number {
+                    number = vertex.degree
+                }
             }
         }
         number
@@ -131,9 +150,11 @@ impl Graph {
 
     pub fn get_degree_maximum(&self) -> u32 {
         let mut number: u32 = 0;
-        for (_, vertex) in &self.vertices {
-            if vertex.degree > number {
-                number = vertex.degree
+        for vertex_opt in &self.vertices {
+            if let Some(vertex) = vertex_opt {
+                if vertex.degree > number {
+                    number = vertex.degree
+                }
             }
         }
         number
@@ -141,8 +162,10 @@ impl Graph {
 
     pub fn get_degree_average(&self) -> f32 {
         let mut number = 0.0;
-        for (_, vertex) in &self.vertices {
-            number += vertex.degree as f32
+        for vertex_opt in &self.vertices {
+            if let Some(vertex) = vertex_opt {
+                number += vertex.degree as f32
+            }
         }
         number /= self.vertices.len() as f32;
         number
@@ -151,8 +174,13 @@ impl Graph {
     pub fn get_degree_median(&self) -> f32 {
         let mut vertices: Vec<u32> = vec![];
         let mut number: f32 = -1.0;
-        for (_, vertex) in &self.vertices {
-            vertices.push(vertex.degree.clone());
+        for vertex in &self.vertices {
+            match vertex {
+                Some(info) => {
+                    vertices.push(info.degree.clone());
+                }
+                None => (),
+            }
         }
         vertices.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
@@ -169,19 +197,10 @@ impl Graph {
     fn create_adjacency_matrix(&self) -> Vec<Vec<i32>> {
         let mut matrix = vec![vec![0; self.vertices.len()]; self.vertices.len()];
 
-        let vertex_indices: HashMap<String, usize> = self
-            .vertices
-            .keys()
-            .enumerate()
-            .map(|(i, v)| (v.clone(), i))
-            .collect();
-
-        for (from, vertex) in &self.vertices {
-            if let Some(&i) = vertex_indices.get(from) {
+        for vertex_opt in &self.vertices {
+            if let Some(vertex) = vertex_opt {
                 for edge in &vertex.edges {
-                    if let Some(&j) = vertex_indices.get(&edge.target) {
-                        matrix[i][j] = edge.weight;
-                    }
+                    matrix[vertex.id][edge.target] = edge.weight;
                 }
             }
         }
@@ -190,62 +209,86 @@ impl Graph {
     }
 
     fn display_adjacency_matrix(&self) {
-        let matrix = &self.create_adjacency_matrix();
-        let vertices = &self.vertices.keys().cloned().collect::<Vec<String>>();
+        let matrix: &Vec<Vec<i32>> = &self.create_adjacency_matrix();
+        let vertices_ids: Vec<usize> = self
+            .vertices
+            .iter()
+            .filter_map(|v| v.as_ref().map(|vertex| vertex.id + 1))
+            .collect();
 
-        println!("{:?}", vertices);
+        println!("{:?}", vertices_ids);
         println!("{:?}", matrix);
     }
 
-    fn create_adjacency_list(&self) -> HashMap<String, Vec<(String, i32)>> {
-        let mut list = HashMap::new();
+    fn create_adjacency_list(&self) -> Vec<Vec<(usize, i32)>> {
+        let mut list: Vec<Vec<(usize, i32)>> = Vec::new();
 
-        for (vertex_id, vertex) in &self.vertices {
-            let edges: Vec<(String, i32)> = vertex
-                .edges
-                .iter()
-                .map(|edge| (edge.target.clone(), edge.weight))
-                .collect();
-            list.insert(vertex_id.clone(), edges);
+        for vertex_opt in &self.vertices {
+            if let Some(vertex) = vertex_opt {
+                let edges: Vec<(usize, i32)> = vertex
+                    .edges
+                    .iter()
+                    .map(|edge| (edge.target.clone(), edge.weight))
+                    .collect();
+                list.insert(vertex.id, edges);
+            }
         }
 
         list
     }
 
     fn display_adjacency_list(&self) {
-        let list = &self.create_adjacency_list();
+        let list: Vec<Vec<(usize, i32)>> = self
+            .create_adjacency_list()
+            .iter()
+            .map(|adjacencies: &Vec<(usize, i32)>| {
+                adjacencies
+                    .iter()
+                    .map(|vertex| (vertex.0 + 1, vertex.1))
+                    .collect::<Vec<(usize, i32)>>()
+            })
+            .collect();
+        let vertices_ids: Vec<usize> = self
+            .vertices
+            .iter()
+            .filter_map(|v| v.as_ref().map(|vertex| vertex.id + 1))
+            .collect();
+
+        println!("{:?}", vertices_ids);
 
         println!("{:?}", list)
     }
 
     fn unmark_all_vertices(&mut self) {
-        for (_, vertex) in &mut self.vertices {
-            vertex.status = VertexStatus::Unmarked
+        for vertex_opt in &mut self.vertices {
+            if let Some(vertex) = vertex_opt {
+                vertex.status = VertexStatus::Unmarked
+            }
         }
     }
 
-    pub fn bfs(&mut self, root_id: &str) -> Vec<String> {
-        let mut queue = VecDeque::new();
-        let mut result = Vec::new();
+    fn bfs(&mut self, root_id: usize) -> Vec<usize> {
+        let mut queue: VecDeque<usize> = VecDeque::new();
+        let mut result: Vec<usize> = Vec::new();
 
         self.unmark_all_vertices();
 
-        if self.vertices.contains_key(root_id) {
-            queue.push_back(root_id.to_string());
-            self.vertices.get_mut(root_id).unwrap().mark();
+        if let Some(_vertex) = &self.vertices[root_id] {
+            queue.push_back(root_id);
+            self.vertices[root_id].as_mut().unwrap().mark();
 
             loop {
-                let vertex_id = queue.pop_front();
+                let vertex_id: Option<usize> = queue.pop_front();
                 match vertex_id {
                     Some(id) => {
                         result.push(id.clone());
 
-                        if let Some(vertex) = self.vertices.get(&id).cloned() {
+                        if let Some(vertex) = &self.vertices[id].clone() {
                             for edge in &vertex.edges {
-                                match self.vertices.get_mut(&edge.target).unwrap().status {
+                                match self.vertices[edge.target].as_mut().unwrap().status {
                                     VertexStatus::Marked => (),
                                     VertexStatus::Unmarked => {
-                                        self.vertices.get_mut(&edge.target).unwrap().mark();
+                                        self.vertices[edge.target].as_mut().unwrap().mark();
                                         queue.push_back(edge.target.clone());
                                     }
                                 }
@@ -260,28 +303,35 @@ impl Graph {
         result
     }
 
-    pub fn dfs(&mut self, root_id: &str) -> Vec<String> {
-        let mut stack: Vec<String> = Vec::new();
-        let mut result: Vec<String> = Vec::new();
+    pub fn display_bfs(&mut self, root_id: &str) {
+        let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
+        let data: Vec<usize> = self.bfs(parsed_id).into_iter().map(|id| id + 1).collect();
+
+        println!("{:?}", data);
+    }
+
+    fn dfs(&mut self, root_id: usize) -> Vec<usize> {
+        let mut stack: Vec<usize> = Vec::new();
+        let mut result: Vec<usize> = Vec::new();
 
         self.unmark_all_vertices();
 
-        if self.vertices.contains_key(root_id) {
-            stack.push(root_id.to_string());
-            self.vertices.get_mut(root_id).unwrap().mark();
+        if let Some(_vertex) = &self.vertices[root_id] {
+            stack.push(root_id);
+            self.vertices[root_id].as_mut().unwrap().mark();
 
             loop {
-                let vertex_id = stack.pop();
+                let vertex_id: Option<usize> = stack.pop();
                 match vertex_id {
                     Some(id) => {
                         result.push(id.clone());
 
-                        if let Some(vertex) = self.vertices.get(&id).cloned() {
+                        if let Some(vertex) = &self.vertices[id].clone() {
                             for edge in &vertex.edges {
-                                match self.vertices.get_mut(&edge.target).unwrap().status {
+                                match self.vertices[edge.target].as_mut().unwrap().status {
                                     VertexStatus::Marked => (),
                                     VertexStatus::Unmarked => {
-                                        self.vertices.get_mut(&edge.target).unwrap().mark();
+                                        self.vertices[edge.target].as_mut().unwrap().mark();
                                         stack.push(edge.target.clone());
                                     }
                                 }
@@ -294,5 +344,12 @@ impl Graph {
         }
 
         result
+    }
+
+    pub fn display_dfs(&mut self, root_id: &str) {
+        let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
+        let data: Vec<usize> = self.dfs(parsed_id).into_iter().map(|id| id + 1).collect();
+
+        println!("{:?}", data);
     }
 }
