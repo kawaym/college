@@ -48,6 +48,13 @@ impl Vertex {
 }
 
 #[derive(Debug)]
+struct VertexTreeView {
+    id: usize,
+    level: usize,
+    parent: usize,
+}
+
+#[derive(Debug)]
 enum GraphKind {
     Bidirectional,
     Unidirectional,
@@ -267,9 +274,31 @@ impl Graph {
         }
     }
 
-    fn bfs(&mut self, root_id: usize) -> Vec<usize> {
+    fn create_tree_view(&self, vector: Vec<(usize, usize, Option<usize>)>) -> Vec<VertexTreeView> {
+        let mut result: Vec<VertexTreeView> = Vec::new();
+
+        for vertex in vector {
+            result.push(VertexTreeView {
+                id: vertex.0 + 1,
+                level: vertex.1,
+                parent: match vertex.2 {
+                    Some(id) => id + 1,
+                    None => 0,
+                },
+            });
+        }
+
+        result
+    }
+
+    pub fn bfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
         let mut queue: VecDeque<usize> = VecDeque::new();
         let mut result: Vec<usize> = Vec::new();
+        let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
+
+        let vertices_len = self.get_vertices_number();
+        let mut levels: Vec<usize> = vec![0; vertices_len as usize];
+        let mut parents: Vec<Option<usize>> = vec![None; vertices_len as usize];
 
         self.unmark_all_vertices();
 
@@ -283,11 +312,16 @@ impl Graph {
                     Some(id) => {
                         result.push(id.clone());
 
+                        if let Some(parent) = parents[id] {
+                            levels[id] = levels[parent] + 1
+                        }
+
                         if let Some(vertex) = &self.vertices[id].clone() {
                             for edge in &vertex.edges {
                                 match self.vertices[edge.target].as_mut().unwrap().status {
                                     VertexStatus::Marked => (),
                                     VertexStatus::Unmarked => {
+                                        parents[edge.target] = Some(id);
                                         self.vertices[edge.target].as_mut().unwrap().mark();
                                         queue.push_back(edge.target.clone());
                                     }
@@ -300,19 +334,33 @@ impl Graph {
             }
         }
 
-        result
+        for i in 0..levels.len() {
+            tree.push((i, levels[i], parents[i]));
+        }
+
+        tree
     }
 
     pub fn display_bfs(&mut self, root_id: &str) {
         let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
-        let data: Vec<usize> = self.bfs(parsed_id).into_iter().map(|id| id + 1).collect();
+        let data = self.bfs(parsed_id);
 
-        println!("{:?}", data);
+        let tree = self.create_tree_view(data);
+        for vertex in tree {
+            println!("vértice: {}", vertex.id);
+            println!("  -> nível: {}", vertex.level);
+            println!("  -> pai: {}", vertex.parent);
+        }
     }
 
-    fn dfs(&mut self, root_id: usize) -> Vec<usize> {
+    fn dfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
         let mut stack: Vec<usize> = Vec::new();
         let mut result: Vec<usize> = Vec::new();
+        let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
+
+        let vertices_len = self.get_vertices_number();
+        let mut levels: Vec<usize> = vec![0; vertices_len as usize];
+        let mut parents: Vec<Option<usize>> = vec![None; vertices_len as usize];
 
         self.unmark_all_vertices();
 
@@ -326,11 +374,16 @@ impl Graph {
                     Some(id) => {
                         result.push(id.clone());
 
+                        if let Some(parent) = parents[id] {
+                            levels[id] = levels[parent] + 1
+                        }
+
                         if let Some(vertex) = &self.vertices[id].clone() {
                             for edge in &vertex.edges {
                                 match self.vertices[edge.target].as_mut().unwrap().status {
                                     VertexStatus::Marked => (),
                                     VertexStatus::Unmarked => {
+                                        parents[edge.target] = Some(id);
                                         self.vertices[edge.target].as_mut().unwrap().mark();
                                         stack.push(edge.target.clone());
                                     }
@@ -343,13 +396,26 @@ impl Graph {
             }
         }
 
-        result
+        for i in 0..levels.len() {
+            tree.push((i, levels[i], parents[i]));
+        }
+
+        tree
     }
 
     pub fn display_dfs(&mut self, root_id: &str) {
-        let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
-        let data: Vec<usize> = self.dfs(parsed_id).into_iter().map(|id| id + 1).collect();
+        // let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
+        // let data: Vec<usize> = self.dfs(parsed_id).into_iter().map(|id| id + 1).collect();
 
-        println!("{:?}", data);
+        // println!("{:?}", data);
+        let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
+        let data = self.dfs(parsed_id);
+
+        let tree = self.create_tree_view(data);
+        for vertex in tree {
+            println!("vértice: {}", vertex.id);
+            println!("  -> nível: {}", vertex.level);
+            println!("  -> pai: {}", vertex.parent);
+        }
     }
 }
