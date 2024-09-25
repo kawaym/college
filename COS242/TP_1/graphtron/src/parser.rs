@@ -1,4 +1,3 @@
-use std::fmt::format;
 use std::fs::{self, File};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
