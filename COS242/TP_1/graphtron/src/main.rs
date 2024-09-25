@@ -19,8 +19,13 @@ fn main() {
     // let _ = calculate_distance("./data", "20", "30");
     // println!("DFS: {:?}", dfs);
 
-    let mut graph = parser::read_graph("./data/grafo_6.txt");
-    graph.display_components_info();
+    // let mut graph = parser::read_graph("./data/grafo_6.txt");
+    // graph.display_components_info();
+    parser::create_folder_and_files("grafo_5");
+    // parser::create_bfs_runtime_study_case("./data/grafo_5.txt");
+
+    // let mut graph = parser::read_graph("./data/grafo_2.txt");
+    parser::create_memory_usage_study_case("./data/grafo_5.txt");
 }
 
 fn measure_distance(dir: &str) -> io::Result<()> {

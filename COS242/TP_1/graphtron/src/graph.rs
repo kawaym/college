@@ -1,5 +1,4 @@
 use std::{
-    cmp::max_by,
     collections::{HashSet, VecDeque},
     usize,
 };
@@ -202,7 +201,7 @@ impl Graph {
         number
     }
 
-    fn create_adjacency_matrix(&self) -> Vec<Vec<i32>> {
+    pub fn create_adjacency_matrix(&self) -> Vec<Vec<i32>> {
         let mut matrix = vec![vec![0; self.vertices.len()]; self.vertices.len()];
 
         for vertex_opt in &self.vertices {
@@ -228,7 +227,7 @@ impl Graph {
         println!("{:?}", matrix);
     }
 
-    fn create_adjacency_list(&self) -> Vec<Vec<(usize, i32)>> {
+    pub fn create_adjacency_list(&self) -> Vec<Vec<(usize, i32)>> {
         let mut list: Vec<Vec<(usize, i32)>> = Vec::new();
 
         for vertex_opt in &self.vertices {
