@@ -1,6 +1,6 @@
 use std::{
     cmp::max_by,
-    collections::{HashMap, VecDeque},
+    collections::{HashSet, VecDeque},
     usize,
 };
 
@@ -300,6 +300,7 @@ impl Graph {
         let mut queue: VecDeque<usize> = VecDeque::new();
         let mut result: Vec<usize> = Vec::new();
         let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
+        let mut visited: HashSet<usize> = HashSet::new();
 
         let vertices_len = self.get_vertices_number();
         let mut levels: Vec<usize> = vec![0; vertices_len as usize];
@@ -363,9 +364,9 @@ impl Graph {
 
         let tree = self.create_tree_view(data);
         for vertex in tree {
-            println!("vértice: {}", vertex.id);
-            println!("  -> nível: {}", vertex.level);
-            println!("  -> pai: {}", vertex.parent);
+            // println!("vértice: {}", vertex.id);
+            // println!("  -> nível: {}", vertex.level);
+            // println!("  -> pai: {}", vertex.parent);
         }
     }
 
@@ -389,7 +390,7 @@ impl Graph {
         let data = self.calculate_distance(parsed_start_id, parsed_end_id);
 
         println!(
-            "Distância entre os vetores {} e {} é de: {}",
+            "Distância entre os vértices {} e {} é de: {}",
             start_id, end_id, data
         );
     }
@@ -413,7 +414,6 @@ impl Graph {
                 }
             }
         }
-        println!("{}", diameter);
         diameter
     }
 
@@ -468,10 +468,6 @@ impl Graph {
     }
 
     pub fn display_dfs(&mut self, root_id: &str) {
-        // let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
-        // let data: Vec<usize> = self.dfs(parsed_id).into_iter().map(|id| id + 1).collect();
-
-        // println!("{:?}", data);
         let parsed_id: usize = root_id.parse::<usize>().unwrap() - 1;
         let data = self.dfs(parsed_id);
 
@@ -481,5 +477,76 @@ impl Graph {
             println!("  -> nível: {}", vertex.level);
             println!("  -> pai: {}", vertex.parent);
         }
+    }
+
+    fn dfs_connected_components(&mut self, root_id: usize) -> Vec<usize> {
+        let mut stack: Vec<usize> = Vec::new();
+        let mut result: Vec<usize> = Vec::new();
+
+        if let Some(vertex) = &self.vertices[root_id] {
+            stack.push(root_id);
+            self.vertices[root_id].as_mut().unwrap().mark();
+
+            loop {
+                let vertex_id: Option<usize> = stack.pop();
+                match vertex_id {
+                    Some(id) => {
+                        result.push(id.clone());
+
+                        if let Some(vertex) = &self.vertices[id].clone() {
+                            for edge in &vertex.edges {
+                                match self.vertices[edge.target].as_mut().unwrap().status {
+                                    VertexStatus::Marked => (),
+                                    VertexStatus::Unmarked => {
+                                        self.vertices[edge.target].as_mut().unwrap().mark();
+                                        stack.push(edge.target.clone());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    None => break,
+                }
+            }
+        }
+        result
+    }
+
+    fn calculate_connected_components(&mut self) -> Vec<Vec<usize>> {
+        let mut components: Vec<Vec<usize>> = Vec::new();
+        let vertex_count = self.get_vertices_number() as usize;
+
+        for vertex_idx in 0..vertex_count {
+            if let Some(vertex) = &self.vertices[vertex_idx] {
+                match vertex.status {
+                    VertexStatus::Marked => (),
+                    VertexStatus::Unmarked => {
+                        let component = self.dfs_connected_components(vertex.id);
+                        components.push(component.clone())
+                    }
+                }
+            }
+        }
+        components
+    }
+
+    pub fn display_components_info(&mut self) {
+        let mut components = self.calculate_connected_components();
+        components.sort_by(|a, b| a.len().cmp(&b.len()));
+
+        components.iter_mut().for_each(|vector| {
+            vector.iter_mut().for_each(|vertex| *vertex += 1);
+            vector.sort();
+        });
+
+        println!("O grafo possui {} componentes conexas", components.len());
+        println!(
+            "A menor componente conexa do grafo é: {:?}",
+            components.first().unwrap()
+        );
+        println!(
+            "A maior componente conexa do grafo é: {:?}",
+            components.last().unwrap()
+        )
     }
 }
