@@ -88,11 +88,13 @@ impl Graph {
         self.add_vertex(&to.clone());
         if let Some(vertex) = &mut self.vertices[from.clone()] {
             vertex.add_edge(to.clone(), weight);
+            vertex.add_degree();
         } else {
             println!("Vertex {from} was not found!");
         }
         if let Some(vertex) = &mut self.vertices[to.clone()] {
             vertex.add_edge(from.clone(), weight);
+            vertex.add_degree();
         } else {
             println!("Vertex {to} was not found!");
         }
@@ -215,7 +217,7 @@ impl Graph {
         matrix
     }
 
-    fn display_adjacency_matrix(&self) {
+    pub fn display_adjacency_matrix(&self) {
         let matrix: &Vec<Vec<i32>> = &self.create_adjacency_matrix();
         let vertices_ids: Vec<usize> = self
             .vertices
@@ -244,7 +246,7 @@ impl Graph {
         list
     }
 
-    fn display_adjacency_list(&self) {
+    pub fn display_adjacency_list(&self) {
         let list: Vec<Vec<(usize, i32)>> = self
             .create_adjacency_list()
             .iter()
@@ -291,7 +293,7 @@ impl Graph {
         result
     }
 
-    fn bfs(
+    pub fn bfs(
         &mut self,
         root_id: usize,
         stop_id: Option<usize>,
@@ -299,7 +301,6 @@ impl Graph {
         let mut queue: VecDeque<usize> = VecDeque::new();
         let mut result: Vec<usize> = Vec::new();
         let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
-        let mut visited: HashSet<usize> = HashSet::new();
 
         let vertices_len = self.get_vertices_number();
         let mut levels: Vec<usize> = vec![0; vertices_len as usize];
@@ -369,7 +370,7 @@ impl Graph {
         }
     }
 
-    fn calculate_distance(&mut self, start_id: usize, end_id: usize) -> usize {
+    pub fn calculate_distance(&mut self, start_id: usize, end_id: usize) -> usize {
         let data = self.bfs(start_id, Some(end_id));
         let mut distance = usize::MIN;
 
@@ -382,7 +383,7 @@ impl Graph {
         distance
     }
 
-    pub fn display_distance(&mut self, start_id: &str, end_id: &str) {
+    pub fn display_distance(&mut self, start_id: &str, end_id: &str) -> usize {
         let parsed_start_id = start_id.parse::<usize>().unwrap() - 1;
         let parsed_end_id = end_id.parse::<usize>().unwrap() - 1;
 
@@ -392,6 +393,8 @@ impl Graph {
             "Distância entre os vértices {} e {} é de: {}",
             start_id, end_id, data
         );
+
+        data
     }
 
     pub fn calculate_diameter(&mut self) -> usize {
@@ -416,7 +419,34 @@ impl Graph {
         diameter
     }
 
-    fn dfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
+    pub fn calculate_approximate_diameter(&mut self) -> usize {
+        let mut diameter = usize::MIN;
+        let mut chosen_vertex: usize = 0;
+        let vertex_count = self.get_vertices_number() as usize;
+
+        for vertex_idx in 0..vertex_count {
+            if let Some(vertex) = &self.vertices[vertex_idx] {
+                let bfs = self.bfs(vertex.id, None);
+                for i in bfs {
+                    if i.1 > diameter {
+                        diameter = i.1;
+                        chosen_vertex = i.0;
+                    }
+                }
+            }
+        }
+
+        let bfs = self.bfs(chosen_vertex, None);
+        for i in bfs {
+            if i.1 > diameter {
+                diameter = i.1;
+            }
+        }
+
+        diameter
+    }
+
+    pub fn dfs(&mut self, root_id: usize) -> Vec<(usize, usize, Option<usize>)> {
         let mut stack: Vec<usize> = Vec::new();
         let mut result: Vec<usize> = Vec::new();
         let mut tree: Vec<(usize, usize, Option<usize>)> = Vec::new();
@@ -472,9 +502,9 @@ impl Graph {
 
         let tree = self.create_tree_view(data);
         for vertex in tree {
-            println!("vértice: {}", vertex.id);
-            println!("  -> nível: {}", vertex.level);
-            println!("  -> pai: {}", vertex.parent);
+            // println!("vértice: {}", vertex.id);
+            // println!("  -> nível: {}", vertex.level);
+            // println!("  -> pai: {}", vertex.parent);
         }
     }
 
@@ -511,7 +541,7 @@ impl Graph {
         result
     }
 
-    fn calculate_connected_components(&mut self) -> Vec<Vec<usize>> {
+    pub fn calculate_connected_components(&mut self) -> Vec<Vec<usize>> {
         let mut components: Vec<Vec<usize>> = Vec::new();
         let vertex_count = self.get_vertices_number() as usize;
 

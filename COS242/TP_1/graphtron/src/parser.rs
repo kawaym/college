@@ -1,3 +1,4 @@
+use std::fmt::format;
 use std::fs::{self, File};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
@@ -46,6 +47,28 @@ pub fn read_graph(filename: &str) -> Graph {
     return graph;
 }
 
+pub fn create_study_cases() -> std::io::Result<()> {
+    let graphs = [
+        "grafo_1", "grafo_2", "grafo_3", "grafo_4", "grafo_5", "grafo_6",
+    ];
+
+    for filename in graphs {
+        create_folder_and_files(filename)?;
+        create_memory_usage_study_case(filename)?;
+        create_bfs_runtime_study_case(filename)?;
+        create_dfs_runtime_study_case(filename)?;
+        create_parent_study_case(filename)?;
+        create_distance_study_case(filename)?;
+        create_connected_components_study_case(filename)?;
+    }
+
+    for filename in graphs {
+        create_diameter_study_case(filename)?;
+    }
+
+    Ok(())
+}
+
 pub fn create_folder_and_files(filename: &str) -> std::io::Result<()> {
     let mut folder_path = PathBuf::from("./data");
     folder_path.push(filename);
@@ -59,6 +82,7 @@ pub fn create_folder_and_files(filename: &str) -> std::io::Result<()> {
         "parent_vertex.txt",
         "connected_components.txt",
         "diameter.txt",
+        "distance.txt",
     ];
 
     for case in cases {
@@ -71,60 +95,169 @@ pub fn create_folder_and_files(filename: &str) -> std::io::Result<()> {
 }
 
 pub fn create_memory_usage_study_case(filename: &str) -> std::io::Result<()> {
+    let mut results = String::new();
     let mut sys = System::new();
     sys.refresh_memory();
     let before_loading = sys.used_memory();
-    println!(
+    results += format!(
         "Memória utilizada antes do carregamento do grafo: {}",
         before_loading
-    );
+    )
+    .as_str();
     let graph = read_graph(filename);
     sys.refresh_memory();
     let after_loading = sys.used_memory();
-    println!("Memória utilizada após o carregamento: {}", after_loading);
+    results += format!("Memória utilizada após o carregamento: {}", after_loading).as_str();
 
-    let matrix = graph.create_adjacency_matrix();
-    sys.refresh_memory();
-    let after_creation = sys.used_memory();
-    println!(
-        "Memória utilizada após a criação da matriz de adjacencia: {}",
-        after_creation
-    );
-
-    println!(
+    results += format!(
         "Diferença de memória em bytes após criação da lista: {}",
         after_loading as i64 - before_loading as i64
-    );
-    println!(
-        "Diferença de memória em bytes após criação da matriz: {}",
-        after_creation as i64 - before_loading as i64
-    );
+    )
+    .as_str();
 
-    matrix;
+    graph;
+
+    let file_path = format!("./data/{filename}/bfs_runtime.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
 
     Ok(())
 }
 
 pub fn create_bfs_runtime_study_case(filename: &str) -> std::io::Result<()> {
-    let mut graph = read_graph(filename);
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
     let mut results = String::new();
     let mut total_duration = std::time::Duration::new(0, 0);
 
-    for i in 1..100 {
+    for i in 1..101 {
         let start = Instant::now();
         graph.display_bfs(i.to_string().as_str());
         let duration = start.elapsed();
         total_duration += duration;
-        results.push_str(&format!("Execução {}: {:?}\n", i + 1, duration));
+        results += format!("Execução {}: {:?}\n", i, duration).as_str();
     }
 
     let average_duration = total_duration / 100;
-    results.push_str(&format!(
-        "Média de tempo de execução: {:?}\n",
-        average_duration
-    ));
+    results += format!("Média de tempo de execução: {:?}\n", average_duration).as_str();
 
-    let file_path = format!("./data/grafo_2/bfs_runtime.txt");
+    let file_path = format!("./data/{filename}/bfs_runtime.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_dfs_runtime_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+    let mut total_duration = std::time::Duration::new(0, 0);
+
+    for i in 1..101 {
+        let start = Instant::now();
+        graph.display_dfs(i.to_string().as_str());
+        let duration = start.elapsed();
+        total_duration += duration;
+        results += format!("Execução {}: {:?}\n", i, duration).as_str();
+    }
+
+    let average_duration = total_duration / 100;
+    results += format!("Média de tempo de execução: {:?}\n", average_duration).as_str();
+
+    let file_path = format!("./data/{filename}/dfs_runtime.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_parent_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    for root_id in 0..3 {
+        let result_bfs = graph.bfs(root_id, None);
+        for target in [9, 19, 29] {
+            results += format!(
+                "O pai do vértice {} na árvore BFS iniciando a partir do vértice {} é: {}\n",
+                target + 1,
+                root_id + 1,
+                result_bfs[target].2.unwrap_or(0)
+            )
+            .as_str()
+        }
+        let result_dfs = graph.dfs(root_id);
+        for target in [9, 19, 29] {
+            results += format!(
+                "O pai do vértice {} na árvore DFS iniciando a partir do vértice {} é: {}\n",
+                target + 1,
+                root_id + 1,
+                result_dfs[target].2.unwrap_or(0)
+            )
+            .as_str();
+        }
+        results += "\n\n";
+    }
+
+    let file_path = format!("./data/{filename}/parent_vertex.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_distance_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    for (start_id, end_id) in [(9, 19), (9, 29), (19, 29)] {
+        let result = graph.calculate_distance(start_id, end_id);
+
+        results += format!(
+            "A distância entre {} e {} é de: {}\n",
+            start_id + 1,
+            end_id + 1,
+            result
+        )
+        .as_str()
+    }
+
+    let file_path = format!("./data/{filename}/distance.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_connected_components_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    let mut result = graph.calculate_connected_components();
+
+    result.sort_by(|a, b| a.len().cmp(&b.len()));
+
+    result.iter_mut().for_each(|vector| {
+        vector.iter_mut().for_each(|vertex| *vertex += 1);
+        vector.sort();
+    });
+
+    results += format!("Número de componentes conexas: {}\nTamanho da maior componente conexa: {:?}\nTamanho da menor componente conexa: {:?}\n\nComponentes conexas: {:?}", result.len(), result.last().unwrap().len(), result.first().unwrap().len(), result).as_str();
+
+    let file_path = format!("./data/{filename}/connected_components.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_diameter_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    let result = graph.calculate_approximate_diameter();
+    results += format!("O diâmetro do grafo é: {}", result).as_str();
+
+    let file_path = format!("./data/{filename}/diameter.txt");
     let mut file = fs::File::create(file_path)?;
     file.write_all(results.as_bytes())?;
 
