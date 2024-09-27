@@ -1,0 +1,433 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{listings}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage[portuguese]{babel}
+\usepackage{caption}
+\usepackage{subcaption}
+\lstset{
+    inputencoding = utf8,  % Input encoding
+    extendedchars = true,  % Extended ASCII
+    literate      =        % Support additional characters
+      {á}{{\'a}}1  {é}{{\'e}}1  {í}{{\'i}}1 {ó}{{\'o}}1  {ú}{{\'u}}1
+      {Á}{{\'A}}1  {É}{{\'E}}1  {Í}{{\'I}}1 {Ó}{{\'O}}1  {Ú}{{\'U}}1
+      {à}{{\`a}}1  {è}{{\`e}}1  {ì}{{\`i}}1 {ò}{{\`o}}1  {ù}{{\`u}}1
+      {À}{{\`A}}1  {È}{{\`E}}1  {Ì}{{\`I}}1 {Ò}{{\`O}}1  {Ù}{{\`U}}1
+      {ä}{{\"a}}1  {ë}{{\"e}}1  {ï}{{\"i}}1 {ö}{{\"o}}1  {ü}{{\"u}}1
+      {Ä}{{\"A}}1  {Ë}{{\"E}}1  {Ï}{{\"I}}1 {Ö}{{\"O}}1  {Ü}{{\"U}}1
+      {â}{{\^a}}1  {ê}{{\^e}}1  {î}{{\^i}}1 {ô}{{\^o}}1  {û}{{\^u}}1
+      {Â}{{\^A}}1  {Ê}{{\^E}}1  {Î}{{\^I}}1 {Ô}{{\^O}}1  {Û}{{\^U}}1
+      {œ}{{\oe}}1  {Œ}{{\OE}}1  {æ}{{\ae}}1 {Æ}{{\AE}}1  {ß}{{\ss}}1
+      {ẞ}{{\SS}}1  {ç}{{\c{c}}}1 {Ç}{{\c{C}}}1 {ø}{{\o}}1  {Ø}{{\O}}1
+      {å}{{\aa}}1  {Å}{{\AA}}1  {ã}{{\~a}}1  {õ}{{\~o}}1 {Ã}{{\~A}}1
+      {Õ}{{\~O}}1  {ñ}{{\~n}}1  {Ñ}{{\~N}}1  {¿}{{?`}}1  {¡}{{!`}}1
+      {°}{{\textdegree}}1 {º}{{\textordmasculine}}1 {ª}{{\textordfeminine}}1
+      {£}{{\pounds}}1  {©}{{\copyright}}1  {®}{{\textregistered}}1
+      {«}{{\guillemotleft}}1  {»}{{\guillemotright}}1  {Ð}{{\DH}}1  {ð}{{\dh}}1
+      {Ý}{{\'Y}}1    {ý}{{\'y}}1    {Þ}{{\TH}}1    {þ}{{\th}}1    {Ă}{{\u{A}}}1
+      {ă}{{\u{a}}}1  {Ą}{{\k{A}}}1  {ą}{{\k{a}}}1  {Ć}{{\'C}}1    {ć}{{\'c}}1
+      {Č}{{\v{C}}}1  {č}{{\v{c}}}1  {Ď}{{\v{D}}}1  {ď}{{\v{d}}}1  {Đ}{{\DJ}}1
+      {đ}{{\dj}}1    {Ė}{{\.{E}}}1  {ė}{{\.{e}}}1  {Ę}{{\k{E}}}1  {ę}{{\k{e}}}1
+      {Ě}{{\v{E}}}1  {ě}{{\v{e}}}1  {Ğ}{{\u{G}}}1  {ğ}{{\u{g}}}1  {Ĩ}{{\~I}}1
+      {ĩ}{{\~\i}}1   {Į}{{\k{I}}}1  {į}{{\k{i}}}1  {İ}{{\.{I}}}1  {ı}{{\i}}1
+      {Ĺ}{{\'L}}1    {ĺ}{{\'l}}1    {Ľ}{{\v{L}}}1  {ľ}{{\v{l}}}1  {Ł}{{\L{}}}1
+      {ł}{{\l{}}}1   {Ń}{{\'N}}1    {ń}{{\'n}}1    {Ň}{{\v{N}}}1  {ň}{{\v{n}}}1
+      {Ő}{{\H{O}}}1  {ő}{{\H{o}}}1  {Ŕ}{{\'{R}}}1  {ŕ}{{\'{r}}}1  {Ř}{{\v{R}}}1
+      {ř}{{\v{r}}}1  {Ś}{{\'S}}1    {ś}{{\'s}}1    {Ş}{{\c{S}}}1  {ş}{{\c{s}}}1
+      {Š}{{\v{S}}}1  {š}{{\v{s}}}1  {Ť}{{\v{T}}}1  {ť}{{\v{t}}}1  {Ũ}{{\~U}}1
+      {ũ}{{\~u}}1    {Ū}{{\={U}}}1  {ū}{{\={u}}}1  {Ů}{{\r{U}}}1  {ů}{{\r{u}}}1
+      {Ű}{{\H{U}}}1  {ű}{{\H{u}}}1  {Ų}{{\k{U}}}1  {ų}{{\k{u}}}1  {Ź}{{\'Z}}1
+      {ź}{{\'z}}1    {Ż}{{\.Z}}1    {ż}{{\.z}}1    {Ž}{{\v{Z}}}1
+      % ¿ and ¡ are not correctly displayed if inconsolata font is used
+      % together with the lstlisting environment. Consider typing code in
+      % external files and using \lstinputlisting to display them instead.      
+  }
+
+\title{Teoria de Grafos}
+\author{Kaway Henrique da Rocha Marinho }
+\date{11 Setembro 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Questão 1}
+
+O grau de um vértice é o número de arestas ligado àquele grafo, isso permite verificar que m em função de ${d_v}$ será dado por algo no formato de um somatório dos graus dos vértices do grafo em questão. Porém como o grafo é bidirecionado (está pedindo arestas em vez de arcos), sabemos que toda aresta seria contabilizada duas vezes. Chegamos então a seguinte fórmula:
+\[|E| = \frac{1}{2} \sum_{v=1}^{|v|} d_v\]
+
+Onde ${|E|}$ é o número de arestas do grafo, ${|v|}$ é o número de vértices daquele grafo e ${d_v}$ é a função grau aplicada no vértice ${v}$.
+\smallbreak
+Podemos testar a função no seguinte grafo:
+\smallbreak
+\begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =30mm]
+
+    \node[main] (1) {1};
+    \node[main] (2) [below left of=1] {2};
+    \node[main] (3) [below right of=1] {3};
+    \node[main] (4) [below left of=3] {4};
+    \draw (1) -> (2);
+    \draw (1) -> (3);
+    \draw (1) -> (4);
+    \draw (2) -> (4);
+    
+\end{tikzpicture}
+
+Esse grafo pode ser representado como:
+
+${V = \{1, 2, 3, 4\}}$
+
+${|E| = \{ (1, 2), (1, 3), (1,4), (2,4)\}}$
+
+E nosso conjunto de graus será: ${D_v = \{3, 2, 1, 2\}}$. Logo seguindo a fórmula encontrada temos:
+
+\[|E| = \frac{(3 + 2 + 1 + 2)}{2} = 4\]
+
+O que condiz com o resultado encontrado por inspeção visual. É possível perceber também que essa fórmula nos permite visualizar o porquê de o número de arestas de um grafo regular (ou seja, todos os vértices possuem o mesmo grau) ser igual a ${\frac{nr}{2}}$. Caso o grafo fosse não bidirecionado, bastaria somar toodos os graus, ou multiplicar essa função por dois, que teríamos a função do número de arestas pelo grau.
+
+\smallbreak
+\section{Questão 2}
+
+\subsection{Memória de uma matriz de adjacência}
+
+A matriz de adjacência de um grafo será uma matriz de tamanho ${n * n}$, onde cada elemento daquela matriz representa uma aresta entre os vértices linha e coluna. Portanto a função que representa a memória em bytes será:
+
+\[M_{bytes} = n^2\,\textrm{bytes}\]
+
+De maneira análoga:
+
+\[M_{bits} = n^2\,\textrm{bits} = \frac{1}{8}\,M_{bytes}\]
+
+Esse é um custo de memória relativamente alto, um grafo de 10 milhões de vértices(o que é factível principalmente para redes sociais ou grafos grandes) por exemplo consumiria um total de 100 terabytes. Existem no entanto algumas formas de mitigar isso, por exemplo para um grafo bidirecionado a matriz é simétrica, portanto bastaria guardar metades dos bytes que seriam normalmente necessários.
+
+\subsection{Memória de uma lista de adjacência}
+
+Uma lista de adjacência irá consumir em memória, para cada aresta, o equivalente a 12 bytes seguindo os parâmetros dados, portanto a função de custo de memória terá 12 como parte de sua composição. Também é possível perceber que cada aresta estará representada duas vezes, uma para cada vértice. Portanto o custo de memória será:
+
+\[M_{bytes} = 2 * 12 * m_{arestas}\, bytes\]
+
+Esse é um custo linear e consideravalmente menor que o custo para matriz de adjacência. Utilizando o mesmo grafo anterior e considerando-o regular e de grau 2, por exemplo, teríamos um consumo de memória de 240 megabytes, consideravelmente menor.
+
+\subsection{Relação entre memória consumida por uma matriz e uma lista de adjacência}
+
+A partir dos custos derivados das questões anteriores e colocando m em função da densidade do grafo, podemos chegar à seguinte inequação:
+
+\[{\frac{2*12*d*n*(n-1)}{2}} < n^2\]
+
+Onde o termo da esquerda se refere ao custo de memória da lista e o da direita ao custo de memória da matriz. Partindo disso, chegamos à seguinte inequação:
+
+\[d < \frac{n}{12*(n-1)}\]
+
+Para grafos muito grandes (${n > 10^6}$) podemos desconsiderar o 1 no denominador, chegando a:
+
+\[d < \frac{1}{12}\]
+
+Ou seja, a densidade do grafo deve obedecer à primeira inequação para que a lista tenha efiência de memória melhor que a matriz. Adicionalmente, para grafos grandes, a densidade deve ser de cerca 8,3\% para que seja eficiente.
+
+\subsection{Eficiência de memória do ator Kevin Bacon}
+
+\[M_{matriz} = 62.500.000.000 \, bytes \approx 59.605 \, megabytes\]
+
+\[M_{lista} = 182.400.000 \, bytes \approx 174 \, megabytes\]
+
+Portanto a estrutura de lista é mais eficiente em termos de memória para esse caso. Poderíamos também verificar isso pela densidade do grafo (0.002) que é menor que a condição encontrada em 2.3
+
+\newpage
+\section{Questão 3}
+
+O grafo ${K_3}$ é definido como:
+
+\begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =25mm]
+    \node[main] (1) {1};
+    \node[main] (2) [below left of=1] {2};
+    \node[main] (3) [below right of=1]{3};
+
+    \draw (1) -> (2);
+    \draw (2) -> (3);
+    \draw (3) -> (1);
+\end{tikzpicture}
+
+E suas árvores geradoras são:
+
+\begin{figure}[H]
+    \centering
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {1};         
+            \node[main] (2) [below left of=1]{2};
+            \node[main] (3) [below right of=1]{3};
+
+            \draw (1) -> (2);
+            \draw (1) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {2};         
+            \node[main] (2) [below left of=1]{1};
+            \node[main] (3) [below right of=1]{3};
+
+            \draw (1) -> (2);
+            \draw (1) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {3};         
+            \node[main] (2) [below left of=1]{1};
+            \node[main] (3) [below right of=1]{2};
+
+            \draw (1) -> (2);
+            \draw (1) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \caption{Árvores Geradoras induzidas por BFS}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {1};         
+            \node[main] (2) [below left of=1]{2};
+            \node[main] (3) [below right of=2]{3};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {2};         
+            \node[main] (2) [below left of=1]{1};
+            \node[main] (3) [below right of=2]{3};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {3};         
+            \node[main] (2) [below left of=1]{1};
+            \node[main] (3) [below right of=2]{2};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \caption{Árvores Geradoras induzidas por DFS, ordenando por vértice de menor valor}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {1};         
+            \node[main] (2) [below left of=1]{3};
+            \node[main] (3) [below right of=2]{2};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {2};         
+            \node[main] (2) [below left of=1]{3};
+            \node[main] (3) [below right of=2]{1};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{.30\textwidth}
+        \begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =10mm]
+            \node[main] (1) {3};         
+            \node[main] (2) [below left of=1]{2};
+            \node[main] (3) [below right of=2]{1};
+
+            \draw (1) -> (2);
+            \draw (2) -> (3);
+        \end{tikzpicture}
+    \end{subfigure}
+    \caption{Árvores Geradoras induzidas por DFS, ordenando por vértice de maior valor}
+\end{figure}
+
+Essas árvores foram geradas levando em conta o conceito de raíz. Isso quer dizer que são tratadas como distintas para fins de demonstração mas são exatamente o mesmo grafo muitas das vezes. Na verdade, analisando as árvores por inspeção visual é possível perceber que só existem 3 árvores geradoras distintas para ${K_3}$, os grafos mais à esquerda de cada uma das figuras acima.
+
+Para ${K_4}$ optei por não desenhar os grafos aqui, para manter a brevidade mas encontrei um total de 16 árvores distintas seguindo o critério acima.
+
+Tentando deduzir, imaginei que o número de árvores distintas teria um formato polinomial, ou seja ${n^x}$ já que ${K_3}$ gera 3 (ou ${3^1}$) e ${K_4}$ gera 16 (ou ${4^2}$). Não consegui prosseguir além disso pois ${K_5}$ demandaria muito tempo para fazer o cálculo de todas as árvores distintas. Pesquisando sobre o problema, encontrei a respeito da fórmula de Cayley que define que todo grafo completo possui ${n^{n - 2}}$ árvores geradoras distintas, resultado condizente com meu raciocínio.
+
+\newpage 
+\section{Questão 4}
+
+\subsection{Ordem exploração BFS}
+
+A ordem de exploração utilizando o algoritmo de busca em largura é: 
+
+B A C D F E H G I
+
+\subsection{Árvore Geradora da BFS}
+
+\begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =20mm]
+
+    \node[main] (1) {B};
+    \node[main] (2) [below =10mm, left =25mm] {A};
+    \node[main] (3) [below =10mm, right =25mm] {C};
+    \node[main] (4) [below left of=2] {D};
+    \node[main] (5) [below right of=2] {F};
+    \node[main] (6) [below left of=3] {E};
+    \node[main] (7) [below right of=3] {H};
+    \node[main] (8) [below of=6] {G};
+    \node[main] (9) [below of=7] {I};
+    
+    \draw (1) -> (2);
+    \draw (1) -> (3);
+    \draw (2) -> (4);
+    \draw (2) -> (5);
+    \draw (3) -> (6);
+    \draw (3) -> (7);
+    \draw (6) -> (8);
+    \draw (7) -> (9);
+        
+\end{tikzpicture}
+
+\subsection{Ordem exploração DFS}
+
+A ordem de exploração utilizando o algoritmo de busca em profundidade é: 
+
+B A D C E F G I H
+
+\subsection{Árvore Geradora da DFS}
+
+\begin{tikzpicture}[thick, main/.style= {draw, circle}, node distance =20mm]
+
+
+    \node[main] (1) [below =50mm]{B};
+    \node[main] (2) [above right of=1] {A};
+    \node[main] (3) [right of=2] {D};
+    \node[main] (4) [right of=3] {C};
+    \node[main] (5) [right of=4] {E};
+    \node[main] (6) [below of=5] {F};
+    \node[main] (7) [right of=5] {G};
+    \node[main] (8) [below of=7] {I};
+    \node[main] (9) [below of=8] {H};
+
+    \draw (1) -> (2);
+    \draw (2) -> (3);
+    \draw (3) -> (4);
+    \draw (4) -> (5);
+    \draw (5) -> (6);
+    \draw (5) -> (7);
+    \draw (7) -> (8);
+    \draw (8) -> (9);
+    
+\end{tikzpicture}
+
+\newpage
+
+\section{Questão 5}
+
+\subsection{Exploração de vértices}
+
+Ambos os algoritmos seguem as etapas de um algoritmo genérico que consiste em classsificar os vértices entre desconhecidos, descobertos e explorados. Quando um vértice desconhecido torna-se descoberto, todos os vértices não explorados adjacentes a ele são descobertos em uma etapa seguinte, isso garante que o algoritmo nunca voltará a um vértice já explorado, portanto explorando cada um apenas uma vez.
+
+\subsection{Examinação de arestas}
+
+Seguindo ainda a ideia do algoritmo genéricos, toda vez que o algoritmo encontrar um vértice ele irá consultar todas as arestas incidentes a ele, para verificar se aquele vértice da aresta é exploradoo ou não, portanto acontecerá duas examinações por aresta.
+
+\subsection{Número de elementos fila BFS}
+
+Seguindo a lógica do BFS, de adicionar todos os vértices adjacentes ao vértice de origem, é possível notar que o maior tamanho de fila de uma busca desse tipo é de N, sendo N o número de vértices presentes no grafo em questão. Isso ocorre pois primeiro o vértice tido como início é adicionado a fila e então todos os vértices adjacentes são também adicionados, isso ocorre em grafos onde o vértice inicial seja conectado a todos os outros vértices, como é o caso de um grafo completo.
+
+\subsection{Número de elementos pilha DFS}
+
+A busca em profundidade percorrerá os vértices de maneira recursiva, indo cada vez mais fundo nos grafos e gerando uma árvore mais profunda que a BFS. Esse comportamento mostra que em um grafo onde cada vértice esteja conectado a apenas um outro vértice a pilha de uma DFS será de N, onde N é o número de vértices daquele grafo, pois a pilha só passará a ser esvaziada ao encontrar o vértice final.
+
+
+\newpage
+\section{Questão 6}
+
+\begin{lstlisting}
+main()
+    Definir s como vértice qualquer do grafo
+    Definir ciclo como uma fila vazia
+    Definir existe_ciclo como falso
+    Definir pai como vetor vazio
+    Desmarcar todos os vértices
+    Definir fila Q vazia
+    Marcar s e inserir s em 
+    
+    Enquanto Q não estiver vazio e existe_ciclo não \\
+    for verdadeiro
+        Retirar vértice v de Q
+        Para todo vizinho w de v faça
+            Se w não estiver marcado
+                Colocar pai[w] = v
+                Marcar w
+                Inserir w em Q
+            Se w estiver marcado
+                Adicionar (w,v) a ciclo
+                Concatenar Encontrar_caminho(w, pai) \\ 
+                à ciclo
+                Colocar existe_ciclo como verdadeiro
+                Quebrar laço de repetição
+    
+    Se existe_ciclo for verdadeiro
+        Imprimir("Grafo possui ciclo")
+        Imprimir(ciclo)
+    
+    Se houver vértice não marcado
+        Imprimir("Grafo desconexo")
+    
+    Se existe_ciclo for falso e não houver vértice \\ 
+    não marcado
+        Imprimir("Grafo é uma árvore")
+
+Encontrar_caminho(vértice, pai)
+    Definir ciclo como uma fila vazia
+    Enquanto pai[vértice] for definido
+        Adicionar (vértice, pai[vértice]) a ciclo
+        Colocar vértice como pai[vértice]
+    Retornar ciclo
+    
+\end{lstlisting}
+
+\newpage
+\section{Questão 7}
+
+\begin{lstlisting}
+main(s)
+    Desmarcar todos os vértices
+    Definir fila Q vazia
+    Definir nivel_atual = 0
+    Definir nivel como vetor vazio
+    Definir pai como vetor vazio
+    Marcar s e inserir s na fila Q
+    Enquanto Q não estiver vazia
+        Se pai[v] for definido 
+            nivel[v] = nivel[pai[v]] + 1
+        Se não
+            nivel[v] = 0
+        Retirar v de Q
+        Para todo vizinho w de v faça
+            Colocar pai[w] = v
+            Se w não estiver marcado
+                Marcar w
+                Inserir w em Q
+\end{lstlisting}
+\end{document}
