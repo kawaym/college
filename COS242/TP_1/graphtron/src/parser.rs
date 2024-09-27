@@ -54,16 +54,16 @@ pub fn create_study_cases() -> std::io::Result<()> {
     for filename in graphs {
         create_folder_and_files(filename)?;
         create_memory_usage_study_case(filename)?;
-        create_bfs_runtime_study_case(filename)?;
-        create_dfs_runtime_study_case(filename)?;
-        create_parent_study_case(filename)?;
-        create_distance_study_case(filename)?;
-        create_connected_components_study_case(filename)?;
+        // create_bfs_runtime_study_case(filename)?;
+        // create_dfs_runtime_study_case(filename)?;
+        // create_parent_study_case(filename)?;
+        // create_distance_study_case(filename)?;
+        // create_connected_components_study_case(filename)?;
     }
 
-    for filename in graphs {
-        create_diameter_study_case(filename)?;
-    }
+    // for filename in graphs {
+    //     create_diameter_study_case(filename)?;
+    // }
 
     Ok(())
 }
@@ -99,24 +99,24 @@ pub fn create_memory_usage_study_case(filename: &str) -> std::io::Result<()> {
     sys.refresh_memory();
     let before_loading = sys.used_memory();
     results += format!(
-        "Memória utilizada antes do carregamento do grafo: {}",
+        "Memória utilizada antes do carregamento do grafo: {}\n",
         before_loading
     )
     .as_str();
-    let graph = read_graph(filename);
+    let graph = read_graph(format!("./data/{}.txt", filename).as_str());
     sys.refresh_memory();
     let after_loading = sys.used_memory();
-    results += format!("Memória utilizada após o carregamento: {}", after_loading).as_str();
+    results += format!("Memória utilizada após o carregamento: {}\n", after_loading).as_str();
 
     results += format!(
-        "Diferença de memória em bytes após criação da lista: {}",
+        "Diferença de memória em bytes após criação da lista: {}\n",
         after_loading as i64 - before_loading as i64
     )
     .as_str();
 
     graph;
 
-    let file_path = format!("./data/{filename}/bfs_runtime.txt");
+    let file_path = format!("./data/{filename}/memory_usage.txt");
     let mut file = fs::File::create(file_path)?;
     file.write_all(results.as_bytes())?;
 
