@@ -36,18 +36,13 @@ class TABLE_HEADER:
             sort_keys=False,
             indent=2)
     def read_header_from_json(self):
-        # file = open("../data/metadata.json", 'r')
-        with open('../data/records', "r") as file:
-            data = file.read(4096)
-            print(data)
-            data = json.loads(data)
+        file = open("../data/metadata.json", 'r')
+        data = json.load(file)
         for key, value in data.items():
             setattr(self, key, value)
         file.close()
     def write_header_to_json(self):
-        # file = open("../data/metadata.json", 'w')
-        with open("../data/records", "r+") as file:
-            file.seek(0)
-            data = self.toJSON()
-            file.write(data)
+        file = open("../data/metadata.json", 'w')
+        data = self.toJSON()
+        file.write(data)
         file.close()
