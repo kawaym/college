@@ -1,9 +1,34 @@
-use std::{collections::VecDeque, usize};
+use core::f64;
+use ordered_float::OrderedFloat;
+use std::{
+    cmp::Ordering,
+    collections::{BinaryHeap, VecDeque},
+    process::exit,
+    usize,
+};
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct State {
+    cost: OrderedFloat<f64>,
+    position: usize,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.cost.cmp(&self.cost) // inversão para que o BinaryHeap funcione como uma min-heap
+    }
+}
+
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 #[derive(Debug, Clone)]
-struct Edge {
+pub struct Edge {
     target: usize,
-    weight: i32,
+    weight: f64,
 }
 
 #[derive(Debug, Clone)]
@@ -34,7 +59,7 @@ impl Vertex {
         self.degree = self.degree + 1
     }
 
-    fn add_edge(&mut self, target: usize, weight: i32) {
+    fn add_edge(&mut self, target: usize, weight: f64) {
         self.add_degree();
         self.edges.push(Edge { target, weight })
     }
@@ -61,6 +86,7 @@ enum GraphKind {
 pub struct Graph {
     vertices: Vec<Option<Vertex>>,
     kind: GraphKind,
+    has_negative_weight: bool,
 }
 
 impl Graph {
@@ -68,7 +94,12 @@ impl Graph {
         Graph {
             vertices: vec![None; size],
             kind: GraphKind::Bidirectional,
+            has_negative_weight: false,
         }
+    }
+
+    pub fn has_negative_weight(&self) -> bool {
+        self.has_negative_weight
     }
 
     pub fn add_vertex(&mut self, id: &usize) {
@@ -80,7 +111,10 @@ impl Graph {
         }
     }
 
-    pub fn add_edge(&mut self, from: usize, to: usize, weight: i32) {
+    pub fn add_edge(&mut self, from: usize, to: usize, weight: f64) {
+        if weight < 0.0 {
+            self.has_negative_weight = true;
+        }
         self.add_vertex(&from.clone());
         self.add_vertex(&to.clone());
         if let Some(vertex) = &mut self.vertices[from.clone()] {
@@ -200,8 +234,8 @@ impl Graph {
         number
     }
 
-    pub fn create_adjacency_matrix(&self) -> Vec<Vec<i32>> {
-        let mut matrix = vec![vec![0; self.vertices.len()]; self.vertices.len()];
+    pub fn create_adjacency_matrix(&self) -> Vec<Vec<f64>> {
+        let mut matrix = vec![vec![0.0; self.vertices.len()]; self.vertices.len()];
 
         for vertex_opt in &self.vertices {
             if let Some(vertex) = vertex_opt {
@@ -215,7 +249,7 @@ impl Graph {
     }
 
     pub fn display_adjacency_matrix(&self) {
-        let matrix: &Vec<Vec<i32>> = &self.create_adjacency_matrix();
+        let matrix: &Vec<Vec<f64>> = &self.create_adjacency_matrix();
         let vertices_ids: Vec<usize> = self
             .vertices
             .iter()
@@ -226,12 +260,12 @@ impl Graph {
         println!("{:?}", matrix);
     }
 
-    pub fn create_adjacency_list(&self) -> Vec<Vec<(usize, i32)>> {
-        let mut list: Vec<Vec<(usize, i32)>> = Vec::new();
+    pub fn create_adjacency_list(&self) -> Vec<Vec<(usize, f64)>> {
+        let mut list: Vec<Vec<(usize, f64)>> = Vec::new();
 
         for vertex_opt in &self.vertices {
             if let Some(vertex) = vertex_opt {
-                let edges: Vec<(usize, i32)> = vertex
+                let edges: Vec<(usize, f64)> = vertex
                     .edges
                     .iter()
                     .map(|edge| (edge.target.clone(), edge.weight))
@@ -244,14 +278,14 @@ impl Graph {
     }
 
     pub fn display_adjacency_list(&self) {
-        let list: Vec<Vec<(usize, i32)>> = self
+        let list: Vec<Vec<(usize, f64)>> = self
             .create_adjacency_list()
             .iter()
-            .map(|adjacencies: &Vec<(usize, i32)>| {
+            .map(|adjacencies: &Vec<(usize, f64)>| {
                 adjacencies
                     .iter()
                     .map(|vertex| (vertex.0 + 1, vertex.1))
-                    .collect::<Vec<(usize, i32)>>()
+                    .collect::<Vec<(usize, f64)>>()
             })
             .collect();
         let vertices_ids: Vec<usize> = self
@@ -574,5 +608,117 @@ impl Graph {
             "A maior componente conexa do grafo é: {:?}",
             components.last().unwrap()
         )
+    }
+
+    pub fn create_dijkstra_vector(&self, root_id: usize) -> (Vec<f64>, Vec<Edge>) {
+        if self.has_negative_weight() {
+            println!(
+                "This library does not works with negative cycles for minimum distances computing"
+            );
+            exit(1)
+        }
+
+        let n = self.vertices.len();
+        let mut distances = vec![f64::INFINITY; n];
+        let mut visited = vec![false; n];
+        let mut parents = vec![None; n];
+
+        distances[root_id] = 0.0;
+
+        for _ in 0..n {
+            let mut u = None;
+            for i in 0..n {
+                if !visited[i] && (u.is_none() || distances[i] < distances[u.unwrap()]) {
+                    u = Some(i);
+                }
+            }
+
+            let u = match u {
+                Some(v) => v,
+                None => break,
+            };
+
+            visited[u] = true;
+
+            if let Some(vertex) = &self.vertices[u] {
+                for edge in &vertex.edges {
+                    let new_distance = distances[u] + edge.weight;
+                    if new_distance < distances[edge.target] {
+                        distances[edge.target] = new_distance;
+                        parents[edge.target] = Some(u);
+                    }
+                }
+            }
+        }
+
+        let mut tree_edges = Vec::new();
+        for target in 0..n {
+            if let Some(parent) = parents[target] {
+                let weight = distances[target] - distances[parent];
+                tree_edges.push(Edge { target, weight });
+            }
+        }
+
+        (distances, tree_edges)
+    }
+
+    pub fn create_dijkstra_heap(&self, root_id: usize) -> (Vec<f64>, Vec<Edge>) {
+        let n = self.vertices.len();
+        let mut distances = vec![OrderedFloat(f64::INFINITY); n];
+        let mut heap = BinaryHeap::new();
+        let mut parents: Vec<Option<usize>> = vec![None; n];
+
+        distances[root_id] = OrderedFloat(0.0);
+        heap.push(State {
+            cost: OrderedFloat(0.0),
+            position: root_id,
+        });
+
+        while let Some(State { cost, position }) = heap.pop() {
+            if cost > distances[position] {
+                continue;
+            }
+
+            if let Some(vertex) = &self.vertices[position] {
+                for edge in &vertex.edges {
+                    let next_cost = cost + OrderedFloat(edge.weight);
+
+                    if next_cost < distances[edge.target] {
+                        distances[edge.target] = next_cost;
+                        parents[edge.target] = Some(position);
+                        heap.push(State {
+                            cost: next_cost,
+                            position: edge.target,
+                        });
+                    }
+                }
+            }
+        }
+
+        let mut tree_edges = Vec::new();
+        for target in 0..n {
+            if let Some(parent) = parents[target] {
+                let weight = distances[target].into_inner() - distances[parent].into_inner();
+                tree_edges.push(Edge { target, weight });
+            }
+        }
+        // Converte OrderedFloat de volta para f64
+        let distances = distances.into_iter().map(|d| d.into_inner()).collect();
+
+        (distances, tree_edges)
+    }
+
+    pub fn display_dijkstra_vector(&self, root_id: &str) {
+        let vertex = root_id.parse::<usize>().unwrap() - 1;
+        let distance = self.create_dijkstra_vector(vertex).0;
+
+        println!("O vetor de distâncias para o grafo é:\n{:?}", distance);
+    }
+
+    pub fn display_dijkstra_heap(&self, root_id: &str) {
+        let vertex = root_id.parse::<usize>().unwrap() - 1;
+        let distance = self.create_dijkstra_heap(vertex).0;
+
+        println!("O heap de distâncias para o grafo é:\n{:?}", distance);
     }
 }

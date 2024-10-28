@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use sysinfo::System;
 
-use crate::graph::Graph;
+use crate::graph::{Edge, Graph};
 
 fn read_lines_from_file<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -14,11 +14,15 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn read_numbers_from_line(line: String) -> Option<(String, String)> {
+fn read_numbers_from_line(line: String) -> Option<(String, String, String)> {
     let parts: Vec<String> = line.split_whitespace().map(|s| s.to_string()).collect();
 
-    if let (Ok(num1), Ok(num2)) = (parts[0].parse::<String>(), parts[1].parse::<String>()) {
-        return Some((num1, num2));
+    if let (Ok(num1), Ok(num2), Ok(num3)) = (
+        parts[0].parse::<String>(),
+        parts[1].parse::<String>(),
+        parts[2].parse::<String>(),
+    ) {
+        return Some((num1, num2, num3));
     }
 
     None
@@ -39,7 +43,7 @@ pub fn read_graph(filename: &str) -> Graph {
             graph.add_edge(
                 numbers.0.parse::<usize>().unwrap() - 1,
                 numbers.1.parse::<usize>().unwrap() - 1,
-                1,
+                numbers.2.parse::<f64>().unwrap(),
             );
         }
     }
@@ -257,6 +261,29 @@ pub fn create_diameter_study_case(filename: &str) -> std::io::Result<()> {
     results += format!("O diâmetro do grafo é: {}", result).as_str();
 
     let file_path = format!("./data/{filename}/diameter.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+pub fn create_weighted_distances_study_case(filename: &str) -> std::io::Result<()> {
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    let (distances, trees) = graph.create_dijkstra_heap(9);
+
+    let mut target_distances: Vec<f64> = vec![];
+    let mut target_trees: Vec<Edge> = vec![];
+    for i in [19, 29, 39, 49, 59] {
+        target_distances.push(distances[i]);
+        target_trees.push(trees[i].clone());
+    }
+
+    results += format!("As distâncias computadas são: {:?}\n", target_distances).as_str();
+    results += format!("Os caminhos mínimos computados são: {:?}", target_trees).as_str();
+
+    let file_path = format!("./data/{filename}/distances.txt");
     let mut file = fs::File::create(file_path)?;
     file.write_all(results.as_bytes())?;
 
