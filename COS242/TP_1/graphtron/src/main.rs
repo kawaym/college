@@ -6,8 +6,5 @@ fn main() {
     // graph.display_adjacency_list();
     // println!("{}", graph.has_negative_weight());
     // graph.display_dijkstra_heap("1");
-    match parser::create_weighted_distances_study_case("grafo_W_1") {
-        Ok(()) => (),
-        Err(value) => println!("{value}"),
-    }
+    parser::create_study_cases();
 }
