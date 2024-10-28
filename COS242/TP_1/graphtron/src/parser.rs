@@ -118,7 +118,7 @@ pub fn create_memory_usage_study_case(filename: &str) -> std::io::Result<()> {
     )
     .as_str();
 
-    graph;
+    drop(graph);
 
     let file_path = format!("./data/{filename}/memory_usage.txt");
     let mut file = fs::File::create(file_path)?;
@@ -268,7 +268,7 @@ pub fn create_diameter_study_case(filename: &str) -> std::io::Result<()> {
 }
 
 pub fn create_weighted_distances_study_case(filename: &str) -> std::io::Result<()> {
-    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let graph = read_graph(format!("./data/{}.txt", filename).as_str());
     let mut results = String::new();
 
     let (distances, trees) = graph.create_dijkstra_heap(9);
