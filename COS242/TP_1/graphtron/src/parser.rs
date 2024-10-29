@@ -52,23 +52,25 @@ pub fn read_graph(filename: &str) -> Graph {
 
 pub fn create_study_cases() -> std::io::Result<()> {
     let graphs = [
-        "grafo_W_1",
-        "grafo_W_2",
-        "grafo_W_3",
-        "grafo_W_4",
-        "grafo_W_5",
+        // "grafo_W_1",
+        // "grafo_W_2",
+        // "grafo_W_3",
+        // "grafo_W_4",
+        // "grafo_W_5",
+        "rede_colaboracao"
     ];
 
     for filename in graphs {
         create_folder_and_files(filename)?;
         // create_weighted_distances_study_case(filename)?;
-        create_dijkstra_comparison_study_case(filename)?;
+        // create_dijkstra_comparison_study_case(filename)?;
         // create_memory_usage_study_case(filename)?;
         // create_bfs_runtime_study_case(filename)?;
         // create_dfs_runtime_study_case(filename)?;
         // create_parent_study_case(filename)?;
-        // create_distance_study_case(filename)?;
+        // create_distance_study_case(filename)?
         // create_connected_components_study_case(filename)?;
+        create_researcher_study_case(filename).expect("failed to run researcher study case");
     }
 
     // for filename in graphs {
@@ -91,8 +93,9 @@ pub fn create_folder_and_files(filename: &str) -> std::io::Result<()> {
         // "parent_vertex.txt",
         // "connected_components.txt",
         // "diameter.txt",
-        "distances.txt",
-        "dijkstra_runtime.txt",
+        // "distances.txt",
+        // "dijkstra_runtime.txt",
+        "researcher_graph.txt"
     ];
 
     for case in cases {
@@ -333,6 +336,36 @@ pub fn create_dijkstra_comparison_study_case(filename: &str) -> std::io::Result<
     .as_str();
 
     let file_path = format!("./data/{filename}/dijkstra_runtime.txt");
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(results.as_bytes())?;
+
+    Ok(())
+}
+
+
+pub fn create_researcher_study_case(filename: &str) -> std::io::Result<()> {
+    
+    // 2722,Edsger W. Dijkstra
+    // 11365,Alan M. Turing
+    // 471365,J. B. Kruskal
+    // 5709,Jon M. Kleinberg
+    // 11386,Éva Tardos
+    // 343930,Daniel R. Figueiredo
+    
+    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
+    let mut results = String::new();
+
+    let (distances, trees) = graph.create_dijkstra_heap(2722 - 1);
+
+    let mut target_distances: Vec<f64> = vec![];
+    for i in [11365, 471365, 5709, 11386, 343930] {
+        target_distances.push(distances[i - 1]);
+    }
+
+    results += format!("As distâncias computadas são: {:?}\n", target_distances).as_str();
+    results += format!("Os caminhos mínimos computados são: {:?}", trees).as_str();
+
+    let file_path = format!("./data/{filename}/distances.txt");
     let mut file = fs::File::create(file_path)?;
     file.write_all(results.as_bytes())?;
 
