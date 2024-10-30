@@ -61,8 +61,8 @@ pub fn create_study_cases() -> std::io::Result<()> {
 
     for filename in graphs {
         create_folder_and_files(filename)?;
-        // create_weighted_distances_study_case(filename)?;
-        create_dijkstra_comparison_study_case(filename)?;
+        create_weighted_distances_study_case(filename)?;
+        // create_dijkstra_comparison_study_case(filename)?;
         // create_memory_usage_study_case(filename)?;
         // create_bfs_runtime_study_case(filename)?;
         // create_dfs_runtime_study_case(filename)?;
@@ -278,7 +278,7 @@ pub fn create_weighted_distances_study_case(filename: &str) -> std::io::Result<(
     let graph = read_graph(format!("./data/{}.txt", filename).as_str());
     let mut results = String::new();
 
-    let (distances, trees) = graph.create_dijkstra_heap(9);
+    let (distances, trees) = graph.create_dijkstra_heap(9, &[19, 29, 39, 49, 59]);
 
     let mut target_distances: Vec<f64> = vec![];
     for i in [19, 29, 39, 49, 59] {
@@ -302,7 +302,7 @@ pub fn create_dijkstra_comparison_study_case(filename: &str) -> std::io::Result<
 
     for i in 0..100 {
         let start = Instant::now();
-        graph.create_dijkstra_heap(i);
+        graph.create_dijkstra_heap(i, &[]);
         let duration = start.elapsed();
         total_duration += duration;
         results += format!("Execução {}: {:?}\n", i, duration).as_str();
@@ -319,7 +319,7 @@ pub fn create_dijkstra_comparison_study_case(filename: &str) -> std::io::Result<
 
     for i in 0..100 {
         let start = Instant::now();
-        graph.create_dijkstra_vector(i);
+        graph.create_dijkstra_vector(i, &[]);
         let duration = start.elapsed();
         total_duration += duration;
         results += format!("Execução {}: {:?}\n", i, duration).as_str();
@@ -327,7 +327,7 @@ pub fn create_dijkstra_comparison_study_case(filename: &str) -> std::io::Result<
 
     let average_duration = total_duration / 100;
     results += format!(
-        "Média de tempo de execução (HEAP): {:?}\n",
+        "Média de tempo de execução (VECTOR): {:?}\n",
         average_duration
     )
     .as_str();

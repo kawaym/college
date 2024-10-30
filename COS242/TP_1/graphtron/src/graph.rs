@@ -610,7 +610,11 @@ impl Graph {
         )
     }
 
-    pub fn create_dijkstra_vector(&self, root_id: usize) -> (Vec<f64>, Vec<Edge>) {
+    pub fn create_dijkstra_vector(
+        &self,
+        root_id: usize,
+        destinations: &[usize],
+    ) -> (Vec<f64>, Vec<Vec<Edge>>) {
         if self.has_negative_weight() {
             println!(
                 "This library does not works with negative cycles for minimum distances computing"
@@ -651,18 +655,33 @@ impl Graph {
             }
         }
 
-        let mut tree_edges = Vec::new();
-        for target in 0..n {
-            if let Some(parent) = parents[target] {
-                let weight = distances[target] - distances[parent];
-                tree_edges.push(Edge { target, weight });
+        let mut paths = Vec::new();
+        for &target in destinations {
+            let mut path = Vec::new();
+            let mut current = target;
+
+            // Segue o caminho de `target` até `root_id` usando o vetor `parents`
+            while let Some(parent) = parents[current] {
+                let weight = distances[current] - distances[parent];
+                path.push(Edge {
+                    target: current,
+                    weight,
+                });
+                current = parent;
             }
+
+            path.reverse(); // Inverte o caminho para que vá do `root_id` ao `target`
+            paths.push(path);
         }
 
-        (distances, tree_edges)
+        (distances, paths)
     }
 
-    pub fn create_dijkstra_heap(&self, root_id: usize) -> (Vec<f64>, Vec<Edge>) {
+    pub fn create_dijkstra_heap(
+        &self,
+        root_id: usize,
+        destinations: &[usize],
+    ) -> (Vec<f64>, Vec<Vec<Edge>>) {
         let n = self.vertices.len();
         let mut distances = vec![OrderedFloat(f64::INFINITY); n];
         let mut heap = BinaryHeap::new();
@@ -695,29 +714,42 @@ impl Graph {
             }
         }
 
-        let mut tree_edges = Vec::new();
-        for target in 0..n {
-            if let Some(parent) = parents[target] {
-                let weight = distances[target].into_inner() - distances[parent].into_inner();
-                tree_edges.push(Edge { target, weight });
-            }
-        }
-        // Converte OrderedFloat de volta para f64
-        let distances = distances.into_iter().map(|d| d.into_inner()).collect();
+        // Converte `distances` de OrderedFloat<f64> para f64 puro
+        let distances: Vec<f64> = distances.into_iter().map(|d| d.into_inner()).collect();
 
-        (distances, tree_edges)
+        // Construção dos caminhos mínimos para os vértices de `destinations`
+        let mut paths = Vec::new();
+        for &target in destinations {
+            let mut path = Vec::new();
+            let mut current = target;
+
+            // Segue o caminho de `target` até `root_id` usando o vetor `parents`
+            while let Some(parent) = parents[current] {
+                let weight = distances[current] - distances[parent];
+                path.push(Edge {
+                    target: current,
+                    weight,
+                });
+                current = parent;
+            }
+
+            path.reverse(); // Inverte o caminho para que vá do `root_id` ao `target`
+            paths.push(path);
+        }
+
+        (distances, paths)
     }
 
     pub fn display_dijkstra_vector(&self, root_id: &str) {
         let vertex = root_id.parse::<usize>().unwrap() - 1;
-        let distance = self.create_dijkstra_vector(vertex).0;
+        let distance = self.create_dijkstra_vector(vertex, &[]).0;
 
         println!("O vetor de distâncias para o grafo é:\n{:?}", distance);
     }
 
     pub fn display_dijkstra_heap(&self, root_id: &str) {
         let vertex = root_id.parse::<usize>().unwrap() - 1;
-        let distance = self.create_dijkstra_heap(vertex).0;
+        let distance = self.create_dijkstra_heap(vertex, &[]).0;
 
         println!("O heap de distâncias para o grafo é:\n{:?}", distance);
     }
