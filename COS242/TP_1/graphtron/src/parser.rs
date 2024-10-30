@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use sysinfo::System;
 
-use crate::graph::{Edge, Graph};
+use crate::graph::Graph;
 
 fn read_lines_from_file<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -14,15 +14,11 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn read_numbers_from_line(line: String) -> Option<(String, String, String)> {
+fn read_numbers_from_line(line: String) -> Option<(String, String)> {
     let parts: Vec<String> = line.split_whitespace().map(|s| s.to_string()).collect();
 
-    if let (Ok(num1), Ok(num2), Ok(num3)) = (
-        parts[0].parse::<String>(),
-        parts[1].parse::<String>(),
-        parts[2].parse::<String>(),
-    ) {
-        return Some((num1, num2, num3));
+    if let (Ok(num1), Ok(num2)) = (parts[0].parse::<String>(), parts[1].parse::<String>()) {
+        return Some((num1, num2));
     }
 
     None
@@ -43,7 +39,7 @@ pub fn read_graph(filename: &str) -> Graph {
             graph.add_edge(
                 numbers.0.parse::<usize>().unwrap() - 1,
                 numbers.1.parse::<usize>().unwrap() - 1,
-                numbers.2.parse::<f64>().unwrap(),
+                1,
             );
         }
     }
@@ -52,25 +48,17 @@ pub fn read_graph(filename: &str) -> Graph {
 
 pub fn create_study_cases() -> std::io::Result<()> {
     let graphs = [
-        // "grafo_W_1",
-        // "grafo_W_2",
-        // "grafo_W_3",
-        // "grafo_W_4",
-        // "grafo_W_5",
-        "rede_colaboracao",
+        "grafo_1", "grafo_2", "grafo_3", "grafo_4", "grafo_5", "grafo_6",
     ];
 
     for filename in graphs {
         create_folder_and_files(filename)?;
-        create_weighted_distances_study_case(filename)?;
-        // create_dijkstra_comparison_study_case(filename)?;
-        // create_memory_usage_study_case(filename)?;
+        create_memory_usage_study_case(filename)?;
         // create_bfs_runtime_study_case(filename)?;
         // create_dfs_runtime_study_case(filename)?;
         // create_parent_study_case(filename)?;
-        // create_distance_study_case(filename)?
+        // create_distance_study_case(filename)?;
         // create_connected_components_study_case(filename)?;
-        create_researcher_study_case(filename).expect("failed to run researcher study case");
     }
 
     // for filename in graphs {
@@ -87,15 +75,13 @@ pub fn create_folder_and_files(filename: &str) -> std::io::Result<()> {
     fs::create_dir_all(&folder_path)?;
 
     let cases: Vec<&str> = vec![
-        // "memory_usage.txt",
-        // "bfs_runtime.txt",
-        // "dfs_runtime.txt",
-        // "parent_vertex.txt",
-        // "connected_components.txt",
-        // "diameter.txt",
-        // "distances.txt",
-        // "dijkstra_runtime.txt",
-        "researcher_graph.txt",
+        "memory_usage.txt",
+        "bfs_runtime.txt",
+        "dfs_runtime.txt",
+        "parent_vertex.txt",
+        "connected_components.txt",
+        "diameter.txt",
+        "distance.txt",
     ];
 
     for case in cases {
@@ -128,7 +114,7 @@ pub fn create_memory_usage_study_case(filename: &str) -> std::io::Result<()> {
     )
     .as_str();
 
-    drop(graph);
+    graph;
 
     let file_path = format!("./data/{filename}/memory_usage.txt");
     let mut file = fs::File::create(file_path)?;
@@ -271,100 +257,6 @@ pub fn create_diameter_study_case(filename: &str) -> std::io::Result<()> {
     results += format!("O diâmetro do grafo é: {}", result).as_str();
 
     let file_path = format!("./data/{filename}/diameter.txt");
-    let mut file = fs::File::create(file_path)?;
-    file.write_all(results.as_bytes())?;
-
-    Ok(())
-}
-
-pub fn create_weighted_distances_study_case(filename: &str) -> std::io::Result<()> {
-    let graph = read_graph(format!("./data/{}.txt", filename).as_str());
-    let mut results = String::new();
-
-    let (distances, trees) = graph.create_dijkstra_heap(9, &[19, 29, 39, 49, 59]);
-
-    let mut target_distances: Vec<f64> = vec![];
-    for i in [19, 29, 39, 49, 59] {
-        target_distances.push(distances[i]);
-    }
-
-    results += format!("As distâncias computadas são: {:?}\n", target_distances).as_str();
-    results += format!("Os caminhos mínimos computados são: {:?}", trees).as_str();
-
-    let file_path = format!("./data/{filename}/distances.txt");
-    let mut file = fs::File::create(file_path)?;
-    file.write_all(results.as_bytes())?;
-
-    Ok(())
-}
-
-pub fn create_dijkstra_comparison_study_case(filename: &str) -> std::io::Result<()> {
-    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
-    let mut results = String::new();
-    let mut total_duration = std::time::Duration::new(0, 0);
-
-    for i in 0..100 {
-        let start = Instant::now();
-        graph.create_dijkstra_heap(i, &[]);
-        let duration = start.elapsed();
-        total_duration += duration;
-        results += format!("Execução {}: {:?}\n", i, duration).as_str();
-    }
-
-    let average_duration = total_duration / 100;
-    results += format!(
-        "Média de tempo de execução (HEAP): {:?}\n",
-        average_duration
-    )
-    .as_str();
-
-    let mut total_duration = std::time::Duration::new(0, 0);
-
-    for i in 0..100 {
-        let start = Instant::now();
-        graph.create_dijkstra_vector(i, &[]);
-        let duration = start.elapsed();
-        total_duration += duration;
-        results += format!("Execução {}: {:?}\n", i, duration).as_str();
-    }
-
-    let average_duration = total_duration / 100;
-    results += format!(
-        "Média de tempo de execução (VECTOR): {:?}\n",
-        average_duration
-    )
-    .as_str();
-
-    let file_path = format!("./data/{filename}/dijkstra_runtime.txt");
-    let mut file = fs::File::create(file_path)?;
-    file.write_all(results.as_bytes())?;
-
-    Ok(())
-}
-
-pub fn create_researcher_study_case(filename: &str) -> std::io::Result<()> {
-    // 2722,Edsger W. Dijkstra
-    // 11365,Alan M. Turing
-    // 471365,J. B. Kruskal
-    // 5709,Jon M. Kleinberg
-    // 11386,Éva Tardos
-    // 343930,Daniel R. Figueiredo
-
-    let mut graph = read_graph(format!("./data/{}.txt", filename).as_str());
-    let mut results = String::new();
-
-    let (distances, trees) =
-        graph.create_dijkstra_heap(2722 - 1, &[11364, 471364, 5708, 11385, 343929]);
-
-    let mut target_distances: Vec<f64> = vec![];
-    for i in [11365, 471365, 5709, 11386, 343930] {
-        target_distances.push(distances[i - 1]);
-    }
-
-    results += format!("As distâncias computadas são: {:?}\n", target_distances).as_str();
-    results += format!("Os caminhos mínimos computados são: {:?}", trees).as_str();
-
-    let file_path = format!("./data/{filename}/distances.txt");
     let mut file = fs::File::create(file_path)?;
     file.write_all(results.as_bytes())?;
 
