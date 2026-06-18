@@ -21,6 +21,10 @@
 #include <iterator>
 #include <utility>
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wparentheses"
+#endif
+
 using namespace std;
 
 template <typename T, typename U>
