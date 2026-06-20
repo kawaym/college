@@ -317,12 +317,36 @@ export class ZoetropeAnimation {
         const stripWidth = this._stripImage.width
 
         /**
-         * Normalização do ângulo para [0, 2π):
-         *   θ_norm = ((θ mod 2π) + 2π) mod 2π
-         * Garante valor positivo para indexação correta na strip.
+         * CORREÇÃO DE FASE E DIREÇÃO:
+         *
+         * O UV mapping do CylinderGeometry do Three.js gera vértices assim:
+         *   x = R × sin(φ),  z = R × cos(φ),  φ ∈ [0, 2π)
+         *   u = φ / (2π)
+         *
+         * Portanto:
+         *   φ=0   → (+z)  → u=0.0  (frame 0)
+         *   φ=π/2 → (+x)  → u=0.25 (frame 3)
+         *   φ=π   → (-z)  → u=0.5  (frame 6)   ← FACE VOLTADA PARA A TELA
+         *   φ=3π/2→ (-x)  → u=0.75 (frame 9)
+         *
+         * A tela está em z = -WALL_DISTANCE. A face do cilindro voltada para
+         * a tela (direção -z) tem φ = π → u = 0.5 → METADE da strip.
+         *
+         * Quando group.rotation.y aumenta (giro CCW visto de cima), o vértice
+         * local em φ fica em φ + rotation no mundo. Para a face -z continuar
+         * alinhada, o φ local que aponta para -z é:
+         *   φ_face = π - rotation
+         *
+         * Logo o offset correto na strip é:
+         *   θ_corrigido = π + rotation
+         *   offset = (θ_corrigido / 2π) × stripWidth
+         *
+         * O sinal positivo mantém a direção do scroll coerente com a rotação
+         * visual do cilindro: ambos avançam no mesmo sentido.
          */
         const twoPi = 2 * Math.PI
-        const normalizedAngle = ((rotation % twoPi) + twoPi) % twoPi
+        const correctedAngle = Math.PI + rotation
+        const normalizedAngle = ((correctedAngle % twoPi) + twoPi) % twoPi
 
         /**
          * Offset em pixels na strip:
