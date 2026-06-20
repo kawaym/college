@@ -47,12 +47,12 @@ import * as THREE from 'three'
 // CONSTANTES
 // ============================================================================
 
-const CYLINDER_RADIUS = 2.0
-const HEIGHT = 2.5
+const CYLINDER_RADIUS = 1.0
+const HEIGHT = 1.5
 const NUM_FRAMES = 12       // Frames na sequência do Muybridge (clássica)
 const MAX_SPEED = 15.0      // rad/s
 const ACCELERATION = 3.0    // rad/s²
-const WALL_DISTANCE = 8.0   // Distância da tela
+const WALL_DISTANCE = 10.0  // Distância da tela
 
 // ============================================================================
 // CLASSE PRINCIPAL
@@ -72,6 +72,13 @@ export class ZoetropeAnimation {
          *     └─ _screen (FIXO) ← tela branca
          */
         this._group = new THREE.Group()
+        /**
+         * Posição Y do grupo: coloca o zoetrópio em cima da mesa.
+         * TABLE_HEIGHT = 1.8 (definido em RoomEnvironment.js).
+         * A base do cilindro fica em group.y - HEIGHT/2,
+         * então group.y = tableTop + HEIGHT/2 centraliza verticalmente.
+         */
+        this._group.position.y = 2.5 + HEIGHT / 2
         scene.add(this._group)
 
         this._speed = 0
@@ -228,16 +235,30 @@ export class ZoetropeAnimation {
         /**
          * SpotLight — Lâmpada do projetor, posicionada no CENTRO do cilindro.
          *
-         * - position (0, 0, 0): dentro do cilindro
-         * - target (0, 0, -WALL_DISTANCE): aponta para a tela
-         * - angle: π/5 (~36°): cone que cobre a tela
-         * - map = canvasTexture: projeta o frame atual
-         * - castShadow = true: obrigatório para .map funcionar + frestas projetarem sombra
+         * ESTRATÉGIA: Tiltar o eixo do cone para cima (mirar no centro da
+         * parede em vez da mesma altura do zoetrópio). Isso permite usar um
+         * ângulo MAIOR sem vazar luz no chão.
+         *
+         * GEOMETRIA DO CONE TILTADO:
+         *   Fonte:  (0, 3.25, 0)
+         *   Alvo:   (0, 4, -10)  → centro vertical da parede (8/2 = 4)
+         *   Vetor eixo: (0, 0.75, -10) → elevação = atan(0.75/10) ≈ 4.3°
+         *
+         * ÂNGULO MÁXIMO sem vazamento no chão:
+         *   A borda inferior do cone faz ângulo (α - elevação) abaixo da
+         *   horizontal. Para que atinja y=0 na parede (z=-10):
+         *     tan(α - 4.3°) = 3.25 / 10 → α - 4.3° = 18° → α ≈ 22.3°
+         *   Usamos α = π/8 = 22.5° (≈ 22.3° + margem mínima).
+         *
+         * COBERTURA NA PAREDE:
+         *   Raio do cone ≈ tan(π/8) × 10 ≈ 4.14
+         *   Diâmetro ≈ 8.3 → cobre praticamente toda a parede (10×8).
+         *   Centro da projeção em y≈4 → de y≈-0.1 a y≈8.1.
          */
-        const spotLight = new THREE.SpotLight(0xffffff, 200)
-        spotLight.position.set(0, 0, 0)
-        spotLight.angle = Math.PI / 6
-        spotLight.penumbra = 0.1
+        const spotLight = new THREE.SpotLight(0xffffff, 300)
+        spotLight.position.set(0, this._group.position.y, 0)
+        spotLight.angle = Math.PI / 8
+        spotLight.penumbra = 0.05
         spotLight.decay = 2
         spotLight.distance = 0
 
@@ -249,7 +270,12 @@ export class ZoetropeAnimation {
         spotLight.shadow.camera.far = WALL_DISTANCE + 2
         spotLight.shadow.bias = -0.003
 
-        spotLight.target.position.set(0, 0, -WALL_DISTANCE)
+        /**
+         * Target apontado para o CENTRO da parede (y=4), não para a mesma
+         * altura do zoetrópio (y=3.25). Isso tilta o eixo 4.3° para cima,
+         * centralizando a projeção circular na parede.
+         */
+        spotLight.target.position.set(0, 4, -WALL_DISTANCE)
         this._scene.add(spotLight.target)
         this._scene.add(spotLight)
         this._spotLight = spotLight
@@ -261,19 +287,14 @@ export class ZoetropeAnimation {
 
     _buildScreen() {
         /**
-         * Parede branca recebe a projeção. receiveShadow = true para
-         * que as sombras das frestas (cortes entre frames) apareçam.
+         * SEM TELA SEPARADA — a projeção incide diretamente na parede
+         * do RoomEnvironment (que já tem receiveShadow = true).
+         *
+         * Motivo: o cone do SpotLight é CIRCULAR (raio ≈ 3.25 na parede).
+         * Uma tela retangular criaria bordas brancas visíveis ao redor
+         * da projeção, quebrando a ilusão. Projetando direto na parede,
+         * o círculo de luz aparece naturalmente sem moldura artificial.
          */
-        const screen = new THREE.Mesh(
-            new THREE.PlaneGeometry(10, 7),
-            new THREE.MeshStandardMaterial({
-                color: 0xffffff, roughness: 0.4, metalness: 0.0,
-            })
-        )
-        screen.position.set(0, 0, -WALL_DISTANCE)
-        screen.receiveShadow = true
-        this._scene.add(screen)
-        this._screen = screen
     }
 
     // ==========================================================================
@@ -314,6 +335,27 @@ export class ZoetropeAnimation {
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+        /**
+         * ESPELHAMENTO HORIZONTAL — Correção de projeção pinhole.
+         *
+         * O SpotLight.map funciona como um projetor de slides:
+         *   A luz parte de um ponto (posição do SpotLight) e projeta a textura
+         *   na direção do target. A projeção perspectiva inverte a imagem
+         *   horizontalmente (como uma câmera pinhole: esquerda↔direita).
+         *
+         * Para que a imagem na parede apareça correta, desenhamos o canvas
+         * ESPELHADO em X. A inversão do projetor cancela o espelhamento,
+         * resultando na orientação original.
+         *
+         * Matematicamente: aplicamos a matriz de escala S = [-1, 0; 0, 1]
+         * ao sistema de coordenadas do canvas, mais translação para reposicionar:
+         *   ctx.scale(-1, 1)        → inverte eixo X
+         *   ctx.translate(-w, 0)    → desloca origem de volta
+         */
+        ctx.save()
+        ctx.scale(-1, 1)
+        ctx.translate(-canvas.width, 0)
+
         const stripWidth = this._stripImage.width
 
         /**
@@ -344,8 +386,19 @@ export class ZoetropeAnimation {
          * O sinal positivo mantém a direção do scroll coerente com a rotação
          * visual do cilindro: ambos avançam no mesmo sentido.
          */
+        /**
+         * O sinal NEGATIVO (π - rotation) compensa o espelhamento horizontal
+         * aplicado ao canvas (ctx.scale(-1,1)). Sem ele, a projeção deslizaria
+         * na direção oposta às frestas do cilindro.
+         *
+         * Sequência de transformações:
+         *   1. rotation cresce (cilindro gira CCW visto de cima)
+         *   2. correctedAngle = π - rotation → offset DIMINUI
+         *   3. ctx.scale(-1,1) espelha → scroll inverte novamente
+         *   4. Resultado final: projeção avança no mesmo sentido que o cilindro
+         */
         const twoPi = 2 * Math.PI
-        const correctedAngle = Math.PI + rotation
+        const correctedAngle = Math.PI - rotation
         const normalizedAngle = ((correctedAngle % twoPi) + twoPi) % twoPi
 
         /**
@@ -406,6 +459,9 @@ export class ZoetropeAnimation {
                 canvasFirst, 0, canvas.width - canvasFirst, canvas.height
             )
         }
+
+        // Restaura o contexto (desfaz o espelhamento para o próximo frame)
+        ctx.restore()
     }
 
     // ==========================================================================

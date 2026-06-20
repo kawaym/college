@@ -14,12 +14,11 @@ export class SceneManager {
 
   _addLights() {
     /**
-     * LUZ AMBIENTE — Intensidade mínima (0.15).
-     * Serve APENAS para que o cilindro/obturador seja visível (não fique invisível no escuro).
-     * A projeção é feita 100% pela SpotLight (definida no ZoetropeAnimation).
-     * Se a ambiente fosse forte, "lavaria" a projeção na tela.
+     * LUZ AMBIENTE — Tom quente (âmbar) para estética vintage séc. XIX.
+     * Intensidade baixa (0.2) para não "lavar" a projeção do SpotLight.
+     * Cor 0xffd4a0 = branco-alaranjado (simula iluminação a gás).
      */
-    const ambient = new THREE.AmbientLight(0xffffff, 0.15)
+    const ambient = new THREE.AmbientLight(0xffd4a0, 0.2)
     this._scene.add(ambient)
   }
 }

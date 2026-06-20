@@ -3,6 +3,7 @@ import { CameraManager } from './core/CameraManager.js'
 import { RendererManager } from './core/RendererManager.js'
 import { ResizeHandler } from './utils/ResizeHandler.js'
 import { ZoetropeAnimation } from './animations/ZoetropeAnimation.js'
+import { RoomEnvironment } from './scene/RoomEnvironment.js'
 
 export class App {
   constructor(container) {
@@ -14,7 +15,10 @@ export class App {
     this.renderer = new RendererManager(container)
     this.resize = new ResizeHandler(container, this.camera, this.renderer)
 
-    // Instancia o zootrópio — será o único objeto animado na Sprint 1
+    // Cenário: mesa, chão, parede, iluminação vintage
+    this.room = new RoomEnvironment(this.scene.get())
+
+    // Zootrópio posicionado sobre a mesa
     this.zoetrope = new ZoetropeAnimation(this.scene.get())
 
     this.animations = [
