@@ -4,6 +4,7 @@ import { RendererManager } from './core/RendererManager.js'
 import { ResizeHandler } from './utils/ResizeHandler.js'
 import { ZoetropeAnimation } from './animations/ZoetropeAnimation.js'
 import { CinematicEvent } from './animations/CinematicEvent.js'
+import { HorseScene } from './animations/HorseScene.js'
 import { RoomEnvironment } from './scene/RoomEnvironment.js'
 
 export class App {
@@ -29,9 +30,19 @@ export class App {
       this.room
     )
 
+    // Cena 3D do cavalo (revelada após travessia da parede)
+    this.horseScene = new HorseScene(
+      this.scene.get(),
+      this.camera.get(),
+      this.renderer.get().domElement,
+      this.cinematic,
+      this.zoetrope
+    )
+
     this.animations = [
       this.zoetrope,
       this.cinematic,
+      this.horseScene,
     ]
   }
 
