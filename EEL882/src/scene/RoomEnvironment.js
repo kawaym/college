@@ -229,7 +229,14 @@ export class RoomEnvironment {
         wall.position.set(0, WALL_HEIGHT / 2, WALL_Z - 0.05)
         wall.receiveShadow = true
         this._scene.add(wall)
+        this._wall = wall
     }
+
+    /**
+     * Retorna a mesh da parede de fundo.
+     * Usado pelo CinematicEvent para ocultar quando a câmera a atravessa.
+     */
+    getWall() { return this._wall }
 
     // ==========================================================================
     // ILUMINAÇÃO DA SALA

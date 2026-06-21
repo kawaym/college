@@ -3,6 +3,7 @@ import { CameraManager } from './core/CameraManager.js'
 import { RendererManager } from './core/RendererManager.js'
 import { ResizeHandler } from './utils/ResizeHandler.js'
 import { ZoetropeAnimation } from './animations/ZoetropeAnimation.js'
+import { CinematicEvent } from './animations/CinematicEvent.js'
 import { RoomEnvironment } from './scene/RoomEnvironment.js'
 
 export class App {
@@ -21,8 +22,16 @@ export class App {
     // Zootrópio posicionado sobre a mesa
     this.zoetrope = new ZoetropeAnimation(this.scene.get())
 
+    // Evento cinemático: monitora velocidade → LERP de câmera
+    this.cinematic = new CinematicEvent(
+      this.camera.get(),
+      this.zoetrope,
+      this.room
+    )
+
     this.animations = [
       this.zoetrope,
+      this.cinematic,
     ]
   }
 
