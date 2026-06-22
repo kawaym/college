@@ -101,7 +101,7 @@ export class ZoetropeAnimation {
          * Isso nos dá controle total sobre qual frame é projetado.
          */
         const img = new Image()
-        img.src = '/textures/muybridge_classic.jpg'
+        img.src = import.meta.env.BASE_URL + 'textures/muybridge_classic.jpg'
         img.onload = () => {
             this._stripImage = img
             this._frameWidth = Math.floor(img.width / NUM_FRAMES)
@@ -143,7 +143,7 @@ export class ZoetropeAnimation {
             true              // openEnded (sem tampas)
         )
 
-        const texture = new THREE.TextureLoader().load('/textures/muybridge_classic.jpg')
+        const texture = new THREE.TextureLoader().load(import.meta.env.BASE_URL + 'textures/muybridge_classic.jpg')
         texture.colorSpace = THREE.SRGBColorSpace
         texture.wrapS = THREE.RepeatWrapping
 

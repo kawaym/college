@@ -141,7 +141,7 @@ export class HorseScene {
          * instantaneamente quando isInside se tornar true (zero delay na revelação).
          */
         const loader = new GLTFLoader()
-        loader.load('/models/Horse.glb', (gltf) => {
+        loader.load(import.meta.env.BASE_URL + 'models/Horse.glb', (gltf) => {
             this._model = gltf.scene
 
             /**
@@ -213,7 +213,7 @@ export class HorseScene {
          * Rotação: mesma do cavalo (-π/2) para ficar alinhado.
          */
         const loader = new GLTFLoader()
-        loader.load('/models/Xbot.glb', (gltf) => {
+        loader.load(import.meta.env.BASE_URL + 'models/Xbot.glb', (gltf) => {
             this._jockey = gltf.scene
 
             /**
