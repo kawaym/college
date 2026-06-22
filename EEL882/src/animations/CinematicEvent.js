@@ -135,18 +135,11 @@ export class CinematicEvent {
     // ==========================================================================
 
     update(time, delta) {
-        switch (this._state) {
-            case STATE.TRACKING:
-                this._updateTracking()
-                break
-            case STATE.INSIDE:
-                // Câmera fixa na posição final
-                break
-        }
+        this._updateTracking()
     }
 
     // ==========================================================================
-    // TRACKING — Câmera acompanha velocidade
+    // TRACKING — Câmera acompanha velocidade (bidirecional)
     // ==========================================================================
 
     _updateTracking() {
@@ -200,26 +193,21 @@ export class CinematicEvent {
         this._camera.lookAt(this._currentLook)
 
         /**
-         * OCULTAÇÃO DA PAREDE + TRANSIÇÃO:
-         * Quando a câmera cruza z = -9.85, a parede (z=-10.05) está a
-         * menos de 0.2 unidades — risco de z-fighting com near plane (0.1).
-         * Escondemos a parede e travamos o estado como INSIDE.
-         *
-         * Ao entrar em INSIDE:
-         * - Controles do zoetrópio são desativados (sem retorno)
-         * - Câmera para na posição final (END_POS)
-         * - Sprint 3 pode ler this.isInside para revelar a cena 3D
+         * VISIBILIDADE DA PAREDE (dinâmica e reversível):
+         * Quando a câmera cruza z = -9.85, escondemos a parede.
+         * Quando volta acima desse limiar, mostramos novamente.
          */
-        if (this._camera.position.z < WALL_HIDE_Z) {
-            const wall = this._room.getWall()
+        const wall = this._room.getWall()
+        const nowInside = this._camera.position.z < WALL_HIDE_Z
+
+        if (nowInside && !this.isInside) {
+            // Acabou de entrar
             if (wall) wall.visible = false
-
-            this._zoetrope.setControlsEnabled(false)
-            this._camera.position.copy(END_POS)
-            this._camera.lookAt(LOOK_END)
-
-            this._state = STATE.INSIDE
             this.isInside = true
+        } else if (!nowInside && this.isInside) {
+            // Voltou para fora
+            if (wall) wall.visible = true
+            this.isInside = false
         }
     }
 }

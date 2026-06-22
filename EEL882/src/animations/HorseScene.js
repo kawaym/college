@@ -395,13 +395,12 @@ export class HorseScene {
     }
 
     // ==========================================================================
-    // REVELAÇÃO
+    // REVELAÇÃO / OCULTAÇÃO (reversível)
     // ==========================================================================
 
-    _reveal() {
+    _show() {
         /**
-         * Transição INSIDE → cena 3D do cavalo.
-         * Esconde o zoetrópio, revela modelo + iluminação + controles.
+         * Mostra a cena 3D do cavalo quando a câmera está "dentro".
          */
 
         // Esconde o zoetrópio (fora do frustum, mas por segurança)
@@ -424,18 +423,44 @@ export class HorseScene {
         this._revealed = true
     }
 
+    _hide() {
+        /**
+         * Esconde a cena 3D e restaura a vista principal quando
+         * o usuário reduz a velocidade e a câmera volta.
+         */
+
+        // Mostra o zoetrópio novamente
+        const group = this._zoetrope.getGroup()
+        if (group) group.visible = true
+
+        // Esconde modelo + iluminação
+        if (this._model) this._model.visible = false
+        if (this._jockey) this._jockey.visible = false
+        if (this._keyLight) this._keyLight.visible = false
+        if (this._rimLight) this._rimLight.visible = false
+        if (this._ground) this._ground.visible = false
+
+        // Desativa controles de órbita
+        this._controls.enabled = false
+
+        this._revealed = false
+    }
+
     // ==========================================================================
     // UPDATE
     // ==========================================================================
 
     update(time, delta) {
-        // Guarda: não faz nada até a câmera estar dentro
-        if (!this._cinematic.isInside) return
-
-        // Revelação (uma vez)
-        if (!this._revealed) {
-            this._reveal()
+        // Transição reversível: mostra/esconde baseado em isInside
+        if (this._cinematic.isInside && !this._revealed) {
+            this._show()
+        } else if (!this._cinematic.isInside && this._revealed) {
+            this._hide()
+            return
         }
+
+        // Se não está dentro, não atualiza nada
+        if (!this._revealed) return
 
         /**
          * ANIMATION MIXER UPDATE:
